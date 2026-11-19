@@ -4,12 +4,20 @@ const tile = ([v, k]) => `<div class="stat"><div class="v">${v}</div><div class=
 try {
   const { meta: m } = await (await fetch("data/products.json", { cache: "no-cache" })).json();
   const pct = m.quotes_total ? Math.round((100 * m.quotes_grounded) / m.quotes_total) : 0;
+  const viaApi = m.extraction_mode !== "claude-code-session";
   const cost = m.tokens_in * 4e-6 + m.tokens_out * 20e-6;  // Opus 5.5 list price per token
   document.querySelectorAll("[data-meta]").forEach((el) => (el.textContent = m[el.dataset.meta] ?? ""));
   document.querySelectorAll("[data-meta-k]").forEach((el) => (el.textContent = nf.format(m[el.dataset.metaK] ?? 0)));
-  document.getElementById("cost").textContent = `$${cost.toFixed(2)}`;
+  if (viaApi) {
+    document.getElementById("cost-line").textContent =
+      `this run used ${nf.format(m.tokens_in)} input and ${nf.format(m.tokens_out)} output tokens, about $${cost.toFixed(2)} at list price.`;
+  } else {
+    document.getElementById("cost-line").textContent +=
+      " This published run was extracted in a Claude Code session and ingested with --from-dir, so no API tokens were metered.";
+  }
   document.getElementById("doc-stats").innerHTML = [
-    [m.pages_crawled, "pages crawled"], [m.products, "products"], [m.edges, "dependency edges"], [`$${cost.toFixed(2)}`, "LLM cost, full run"],
+    [m.pages_crawled, "pages crawled"], [m.products, "products"], [m.edges, "product connections"],
+    viaApi ? [`$${cost.toFixed(2)}`, "LLM cost, full run"] : [`${pct}%`, "evidence quotes verified"],
   ].map(tile).join("");
   document.getElementById("quality-stats").innerHTML = [
     [`${pct}%`, `evidence quotes verified (${m.quotes_grounded}/${m.quotes_total})`],

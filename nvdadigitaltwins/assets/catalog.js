@@ -8,10 +8,11 @@ const FAMILIES = [  // fixed order = fixed categorical slot (color follows the f
 const famColor = (f) => `var(--fam-${FAMILIES.indexOf(f) + 1 || 8})`;
 const LAYERS = [
   { name: "Operate & optimize", sub: "act on the live twin", fams: ["Operations AI"] },
-  { name: "Industry twins & blueprints", sub: "reference workflows per domain", fams: ["Blueprint / reference workflow", "Domain digital twin", "Other"] },
+  { name: "Industry twins & blueprints", sub: "reference workflows per domain", fams: ["Blueprint / reference workflow", "Domain digital twin"] },
   { name: "AI for the physical world", sub: "generate, predict, accelerate", fams: ["World foundation models", "Physics AI"] },
   { name: "Simulate", sub: "physics, sensors, robots", fams: ["Simulation"] },
   { name: "Describe & render", sub: "OpenUSD scene + RTX", fams: ["Platform"] },
+  { name: "Robotics & enabling tech", sub: "robot stacks, libraries, orchestration", fams: ["Other"] },
 ];
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -28,15 +29,18 @@ async function main() {
   }
   const { meta, products, customers } = data;
   const byId = Object.fromEntries(products.map((p) => [p.id, p]));
-  const usedBy = {};
-  products.forEach((p) => p.builds_on.forEach((b) => (usedBy[b] ||= []).push(p.id)));
+  // builds_on means "built on or integrates with", so the UI treats it as an undirected connection.
+  const links = Object.fromEntries(products.map((p) => [p.id, new Set(p.builds_on)]));
+  products.forEach((p) => p.builds_on.forEach((b) => links[b]?.add(p.id)));
+  const neighbors = (id) => [...(links[id] || [])].filter((x) => x !== id && byId[x])
+    .sort((a, b) => byId[b].mentions - byId[a].mentions);
 
   // ---- stats ---------------------------------------------------------------------
   const grounded = meta.quotes_total ? Math.round((100 * meta.quotes_grounded) / meta.quotes_total) : 0;
   $("#stats").innerHTML = [
     [meta.pages_crawled, "public pages crawled"],
     [meta.products, "products extracted"],
-    [meta.edges, "product dependencies"],
+    [meta.edges, "product connections"],
     [`${grounded}%`, "evidence quotes verified"],
   ].map(([v, k]) => `<div class="stat"><div class="v">${esc(v)}</div><div class="k">${esc(k)}</div></div>`).join("");
   document.querySelectorAll("[data-meta]").forEach((el) => (el.textContent = meta[el.dataset.meta] ?? ""));
@@ -54,7 +58,7 @@ async function main() {
   const svg = $("svg.edges", stack);
   const pillOf = (id) => $(`.pill[data-id="${CSS.escape(id)}"]`, stack);
   function trace(id) {
-    const related = new Set([...(byId[id]?.builds_on || []), ...(usedBy[id] || [])]);
+    const related = new Set(id ? neighbors(id) : []);
     stack.classList.toggle("focus", !!id);
     stack.querySelectorAll(".pill").forEach((el) => {
       el.classList.toggle("on", el.dataset.id === id);
@@ -69,8 +73,12 @@ async function main() {
       if (!el) return;
       const b = el.getBoundingClientRect();
       const bx = b.left + b.width / 2 - box.left, by = b.top + b.height / 2 - box.top;
-      const my = (ay + by) / 2;
-      svg.insertAdjacentHTML("beforeend", `<path d="M${ax},${ay} C${ax},${my} ${bx},${my} ${bx},${by}"/>`);
+      // Bow the curve perpendicular to the straight line, so it arcs around pills in between
+      // (same-row links arc upward; vertical links arc sideways).
+      const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+      const off = Math.min(90, len * 0.3) * (dx >= 0 ? -1 : 1);
+      const cx = (ax + bx) / 2 + (-dy / len) * off, cy = (ay + by) / 2 + (dx / len) * off;
+      svg.insertAdjacentHTML("beforeend", `<path d="M${ax},${ay} Q${cx},${cy} ${bx},${by}"/>`);
     });
   }
   stack.addEventListener("pointerover", (e) => { const p = e.target.closest(".pill"); if (p) trace(p.dataset.id); });
@@ -98,7 +106,7 @@ async function main() {
     $("#catalog-grid").innerHTML = list.length ? list.map((p, i) =>
       `<button class="card" data-id="${esc(p.id)}" style="--c:${famColor(p.family)};--i:${Math.min(i, 20)}">
         <div class="fam">${esc(p.family)}</div><h3>${esc(p.name)}</h3><p>${esc(p.one_liner)}</p>
-        <div class="meta">described on ${p.sources.length} page${p.sources.length > 1 ? "s" : ""}${p.builds_on.length ? ` · builds on ${p.builds_on.length}` : ""}</div>
+        <div class="meta">described on ${p.sources.length} page${p.sources.length > 1 ? "s" : ""}${neighbors(p.id).length ? ` · works with ${neighbors(p.id).length}` : ""}</div>
       </button>`).join("") : `<p class="empty">No products match.</p>`;
   }
   $("#catalog-grid").addEventListener("click", (e) => { const c = e.target.closest(".card"); if (c) openDrawer(c.dataset.id); });
@@ -115,8 +123,7 @@ async function main() {
       <h4>Role in a digital twin</h4><p style="color:var(--text-secondary)">${esc(p.digital_twin_role)}</p>
       ${p.capabilities.length ? `<h4>Capabilities</h4><ul>${p.capabilities.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
       ${p.industries.length ? `<h4>Industries &amp; use cases</h4><div class="tags">${p.industries.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
-      ${p.builds_on.length ? `<h4>Builds on</h4><div class="tags">${p.builds_on.map(link).join("")}</div>` : ""}
-      ${usedBy[id]?.length ? `<h4>Used by</h4><div class="tags">${usedBy[id].map(link).join("")}</div>` : ""}
+      ${neighbors(id).length ? `<h4>Works with</h4><div class="tags">${neighbors(id).map(link).join("")}</div>` : ""}
       <h4>Sources (${p.sources.length})</h4><ul>${p.sources.map((s) =>
         `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join("")}</ul>
       <p class="small muted" style="margin-top:20px">Summary generated by Claude from the pages above and checked against ${p.evidence_count} verbatim quote(s). Verify details on nvidia.com.</p>`;

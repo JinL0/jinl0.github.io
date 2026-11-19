@@ -1,0 +1,1271 @@
+{
+  "meta": {
+    "generated_at": "2026-11-19",
+    "model": "claude-opus-5-5",
+    "extraction_mode": "claude-code-session",
+    "pages_crawled": 30,
+    "chars_crawled": 783025,
+    "pages_with_products": 29,
+    "pages_failed": 0,
+    "products": 30,
+    "edges": 51,
+    "quotes_total": 220,
+    "quotes_grounded": 220,
+    "records_dropped_ungrounded": 0,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "page_kinds": {
+      "product page": 9,
+      "glossary/explainer": 4,
+      "developer hub": 8,
+      "case study": 3,
+      "use-case page": 6
+    }
+  },
+  "customers": [
+    "Siemens",
+    "Foxconn",
+    "Skild AI",
+    "Lightwheel",
+    "Jacobs",
+    "Phaidra",
+    "Ansys",
+    "Shell",
+    "Microsoft",
+    "PTC",
+    "Cadence",
+    "KION",
+    "Agility",
+    "Apptronik",
+    "Fourier Intelligence",
+    "Unitree",
+    "Amazon",
+    "World Labs",
+    "MITRE",
+    "Tomorrow.io",
+    "Aigen",
+    "Linker Vision",
+    "Luminary Cloud",
+    "nTop"
+  ],
+  "products": [
+    {
+      "id": "omniverse",
+      "name": "NVIDIA Omniverse",
+      "family": "Platform",
+      "one_liner": "Modular, agent-ready libraries for building and validating simulation-ready 3D worlds for physical AI.",
+      "what_it_does": "Omniverse is a set of libraries, APIs, and services that developers embed in their existing 3D applications rather than a standalone app. It covers OpenUSD data interoperability, RTX rendering and sensor simulation (ovrtx), GPU physics (ovphysx), and SimReady asset validation. AI agents can call these libraries as tools to prepare content, assemble simulation workflows, and flag issues for review.",
+      "digital_twin_role": "Provides the structured OpenUSD scene, rendering, physics, and sensor simulation used to turn facility and equipment data into simulation-ready digital twins of factories and AI factories, where design and operational changes are tested before implementation.",
+      "capabilities": [
+        "OpenUSD authoring and data exchange",
+        "SimReady asset validation",
+        "RTX rendering and camera/lidar/radar sensor simulation (ovrtx)",
+        "GPU-accelerated physics for motion, contacts, and collisions (ovphysx)",
+        "Agent skills callable by frontier AI agents",
+        "Synthetic data generation"
+      ],
+      "industries": [
+        "Manufacturing",
+        "Industrial digital twins",
+        "Autonomous vehicles",
+        "AI factory digital twins",
+        "Robot simulation and learning",
+        "Synthetic data generation",
+        "Autonomous vehicle simulation",
+        "Product design and engineering"
+      ],
+      "mentions": 10,
+      "evidence_count": 31,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/omniverse/",
+          "title": "Omniverse Libraries | NVIDIA Developer"
+        },
+        {
+          "url": "https://developer.nvidia.com/omniverse/community/",
+          "title": "Omniverse Community | NVIDIA Developer"
+        },
+        {
+          "url": "https://docs.nvidia.com/learning/physical-ai/",
+          "title": "Physical AI Learning — Physical AI Learning"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/foxconn-develops-physical-ai-enabled-smart-factories-with-digital-twins/",
+          "title": "Foxconn | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/zaha-hadid-architects-with-omniverse-and-usd/",
+          "title": "Zaha Hadid Architects | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/sensor-simulation/",
+          "title": "What Is Sensor Simulation? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/omniverse/",
+          "title": "Develop Physical AI Applications | NVIDIA Omniverse"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/computational-fluid-dynamics-simulation/",
+          "title": "Computational Fluid Dynamics (CFD) Simulation | Use Case | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/industrial-facility-digital-twins/",
+          "title": "Industrial Facility Digital Twins—Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "cosmos",
+        "cuda-x",
+        "isaac",
+        "metropolis",
+        "newton",
+        "omniverse-dsx-blueprint",
+        "openusd",
+        "physicsnemo"
+      ]
+    },
+    {
+      "id": "isaac-sim",
+      "name": "NVIDIA Isaac Sim",
+      "family": "Simulation",
+      "one_liner": "Open-source robotics simulation framework for testing robots and generating synthetic data in physically based worlds.",
+      "what_it_does": "Isaac Sim is an open-source, extensible framework for simulating robots and sensors in physically based virtual environments. Developers import CAD, URDF, or real-world captures, convert them to USD, assemble scenes with materials, physics, and robot and sensor models, then generate synthetic data and test full robot stacks.",
+      "digital_twin_role": "It turns CAD and real-world captures into OpenUSD simulation scenes that act as digital twins for training perception and mobility stacks and running software- or hardware-in-the-loop tests.",
+      "capabilities": [
+        "Physically accurate robot simulation",
+        "Physically based robot and sensor simulation",
+        "Controllable synthetic data generation with annotations",
+        "Import from CAD, URDF, MJCF, and real-world captures",
+        "Software-in-the-loop and hardware-in-the-loop testing",
+        "ROS/ROS2 connectivity"
+      ],
+      "industries": [
+        "Robotics",
+        "Manufacturing",
+        "Autonomous mobile robots",
+        "Humanoid robots",
+        "Automotive manufacturing",
+        "Automated welding inspection",
+        "Healthcare robotics",
+        "Warehouses and logistics"
+      ],
+      "mentions": 7,
+      "evidence_count": 21,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        },
+        {
+          "url": "https://developer.nvidia.com/isaac/sim/",
+          "title": "Isaac Sim - Robotics Simulation and Synthetic Data Generation | NVIDIA Developer"
+        },
+        {
+          "url": "https://docs.nvidia.com/learning/physical-ai/",
+          "title": "Physical AI Learning — Physical AI Learning"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/foxconn-develops-physical-ai-enabled-smart-factories-with-digital-twins/",
+          "title": "Foxconn | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/volkswagen-with-wandelbots-nova-and-isaac-sim/",
+          "title": "Volkswagen | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/physics-simulation-for-robotics/",
+          "title": "Physics Simulation for Robotics | NVIDIA Use Case"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "cosmos",
+        "isaac-gr00t",
+        "isaac-lab",
+        "newton",
+        "omniverse",
+        "omniverse-nurec",
+        "openusd"
+      ]
+    },
+    {
+      "id": "openusd",
+      "name": "OpenUSD",
+      "family": "Platform",
+      "one_liner": "Open, extensible scene-description framework that serves as the shared 3D data layer for digital twins and physical AI.",
+      "what_it_does": "OpenUSD (Universal Scene Description), originally created by Pixar, describes and composes 3D content as layered scene descriptions assembled into a single 'stage' of prims. Composition arcs such as references and variant sets let teams reuse and vary assets nondestructively, and the format natively carries physics properties, materials, sensor data, and metadata. Standardization is driven by the Alliance for OpenUSD (AOUSD).",
+      "digital_twin_role": "It acts as the common data layer that merges CAD geometry, materials, simulation physics, and live sensor streams into one queryable, updatable scene for a digital twin. SimReady specifications on top of it define what assets need to be valid for physical AI simulation.",
+      "capabilities": [
+        "Data interoperability across 3D tools",
+        "Aggregating CAD and BIM data into a common 3D environment",
+        "Multi-tool collaboration in one virtual environment",
+        "Simulation-ready assets with geometry, materials, and physics properties",
+        "Layered, nondestructive scene composition on a single stage",
+        "Native physics properties (mass, friction, joints, colliders) in the scene"
+      ],
+      "industries": [
+        "Manufacturing",
+        "Robotics",
+        "Architecture and building design",
+        "Data centers and AI factories",
+        "Marketing and product configurators",
+        "Digital twins",
+        "Robotics simulation",
+        "Synthetic data generation"
+      ],
+      "mentions": 6,
+      "evidence_count": 20,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/openusd/",
+          "title": "OpenUSD (Universal Scene Description) for Developers | NVIDIA Developer"
+        },
+        {
+          "url": "https://docs.nvidia.com/learning/physical-ai/",
+          "title": "Physical AI Learning — Physical AI Learning"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/foxconn-develops-physical-ai-enabled-smart-factories-with-digital-twins/",
+          "title": "Foxconn | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/openusd/",
+          "title": "What Is OpenUSD and How Does It Work?"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/industrial-facility-digital-twins/",
+          "title": "Industrial Facility Digital Twins—Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac-sim",
+        "omniverse"
+      ]
+    },
+    {
+      "id": "mega-nvidia-omniverse-blueprint",
+      "name": "Mega NVIDIA Omniverse Blueprint",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Omniverse blueprint for software-in-the-loop testing of multi-robot fleets inside facility digital twins.",
+      "what_it_does": "Mega is an Omniverse Blueprint for testing multi-robot fleets with software in the loop. Teams use it to simulate and validate physical AI systems, such as intelligent cameras and autonomous forklifts, in a virtual facility before deployment.",
+      "digital_twin_role": "It runs warehouse operations inside a digital twin so robot fleets and their integration can be validated virtually before they are deployed in the real facility.",
+      "capabilities": [
+        "Software-in-the-loop testing of multi-robot fleets",
+        "Virtual validation of autonomous forklifts and intelligent cameras",
+        "Warehouse operations simulation before deployment",
+        "Robot fleet management at scale",
+        "Combines digital twins with AI-powered robots",
+        "Integrates video analytics AI agents"
+      ],
+      "industries": [
+        "Factories",
+        "Industrial automation",
+        "Warehousing and logistics",
+        "Warehouses",
+        "Manufacturing",
+        "Robotics",
+        "Warehouses and logistics",
+        "Industrial facilities"
+      ],
+      "mentions": 5,
+      "evidence_count": 10,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/autonomous-machines/intelligent-video-analytics-platform/",
+          "title": "Metropolis: Intelligent Vision AI for Smart Infrastructure | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/industrial-facility-digital-twins/",
+          "title": "Industrial Facility Digital Twins—Use Case | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac",
+        "metropolis",
+        "omniverse"
+      ]
+    },
+    {
+      "id": "isaac-lab",
+      "name": "NVIDIA Isaac Lab",
+      "family": "Simulation",
+      "one_liner": "Open-source, lightweight framework on Isaac Sim for training robot policies at scale.",
+      "what_it_does": "Isaac Lab is an open-source reference application built on Isaac Sim and tuned for large-scale robot learning. Developers use it to train robot policies and to train, test, and validate robotic systems virtually.",
+      "digital_twin_role": "Robots set up in Isaac Sim scenes are used in Isaac Lab to learn policies in simulation before real-world deployment.",
+      "capabilities": [
+        "Robot policy training",
+        "Robot learning at scale",
+        "Virtual training, testing, and validation of robots",
+        "Reinforcement learning policy training",
+        "GPU-accelerated simulation",
+        "Teacher-student policy distillation"
+      ],
+      "industries": [
+        "Robotics",
+        "Humanoid robots",
+        "Robot learning"
+      ],
+      "mentions": 5,
+      "evidence_count": 13,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        },
+        {
+          "url": "https://developer.nvidia.com/isaac/sim/",
+          "title": "Isaac Sim - Robotics Simulation and Synthetic Data Generation | NVIDIA Developer"
+        },
+        {
+          "url": "https://docs.nvidia.com/learning/physical-ai/",
+          "title": "Physical AI Learning — Physical AI Learning"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/physics-simulation-for-robotics/",
+          "title": "Physics Simulation for Robotics | NVIDIA Use Case"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac-gr00t",
+        "isaac-sim",
+        "newton"
+      ]
+    },
+    {
+      "id": "omniverse-dsx-blueprint",
+      "name": "NVIDIA Omniverse DSX Blueprint",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Open framework for building physically accurate digital twins of AI factory facilities on Omniverse and OpenUSD.",
+      "what_it_does": "The blueprint gives teams an open framework to model an AI factory's facility layout, power topology, cooling systems, and equipment placement. It uses Omniverse libraries with OpenUSD as the shared data layer and includes pipeline samples for turning partner CAD and engineering data into validated OpenUSD assets. It runs locally or in containers, including cloud deployments with browser streaming.",
+      "digital_twin_role": "Provides the physical facility twin within DSX Sim, where layouts, power, and cooling configurations are compared and tested before construction.",
+      "capabilities": [
+        "Aggregates 3D data from all facility components",
+        "Real-time, physically accurate facility simulation",
+        "Instant testing of design changes",
+        "Redundancy validation and failure scenario modeling",
+        "Facility layout, power topology, and cooling modeling",
+        "OpenUSD shared data layer"
+      ],
+      "industries": [
+        "Data centers and AI factories",
+        "AI factories / data centers",
+        "Architecture / Engineering / Construction",
+        "AI factories",
+        "Data centers"
+      ],
+      "mentions": 5,
+      "evidence_count": 14,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/data-center/products/dsx/",
+          "title": "AI Factory Design, Simulation, and Operations  | NVIDIA DSX Platform"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/data-center/products/dsx/sim/",
+          "title": "NVIDIA DSX Sim | Design and Simulate AI Factories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/ai-factory/",
+          "title": "What is an AI Factory? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/ai-factory-digital-twins/",
+          "title": "AI Factory Digital Twins for Design and Operations | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "cuda-x",
+        "dsx",
+        "dsx-sim",
+        "omniverse",
+        "openusd"
+      ]
+    },
+    {
+      "id": "cosmos",
+      "name": "NVIDIA Cosmos",
+      "family": "World foundation models",
+      "one_liner": "Open platform of world foundation models, datasets, and tools for building physical AI world models.",
+      "what_it_does": "Cosmos provides open world foundation models (the Cosmos 3 Super, Nano, and Edge omni-models) plus datasets, data curation tools, and a training framework for building and specializing world models. The models can reason over video as a VLM, act as a physics-grounded world simulator, generate synthetic data from multimodal inputs, and serve as a backbone for robot world action models.",
+      "digital_twin_role": "Cosmos complements Omniverse simulations: Omniverse renders the simulation environment, and Cosmos Transfer models turn those simulations into controllable, photorealistic synthetic data, while Cosmos itself can run closed-loop world simulation for evaluating physical AI behavior.",
+      "capabilities": [
+        "Open world foundation models",
+        "World state generation",
+        "Physical reasoning",
+        "Action learning for physical AI",
+        "Reasoning over video as a vision language model",
+        "Physics-grounded, controllable world simulation"
+      ],
+      "industries": [
+        "Robotics",
+        "Autonomous vehicles",
+        "Video analytics / industrial vision",
+        "Quality inspection",
+        "Public safety",
+        "Traffic monitoring",
+        "Logistics",
+        "Smart infrastructure"
+      ],
+      "mentions": 4,
+      "evidence_count": 12,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/ai/cosmos/",
+          "title": "NVIDIA Cosmos: Physical AI Development Platform"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/omniverse/",
+          "title": "Develop Physical AI Applications | NVIDIA Omniverse"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/solutions/autonomous-vehicles/simulation/",
+          "title": "Simulation for Robotaxis and Autonomous Vehicles | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac-lab",
+        "metropolis",
+        "omniverse",
+        "omniverse-nurec"
+      ]
+    },
+    {
+      "id": "dsx-air",
+      "name": "NVIDIA DSX Air",
+      "family": "Simulation",
+      "one_liner": "Cloud-based modeling of AI factory hardware and software infrastructure for testing before deployment.",
+      "what_it_does": "DSX Air models an AI factory's logical hardware and software infrastructure in the cloud. Teams use it to test network topologies and partner integrations and to rehearse provisioning, automation, and change plans.",
+      "digital_twin_role": "It provides the logical-infrastructure side of the AI factory digital twin within DSX Sim, validating systems before they are deployed.",
+      "capabilities": [
+        "Cloud-based twin of the full AI factory ecosystem",
+        "Simulation of AI networking fabrics, DPUs, and SuperNICs",
+        "Front-end and back-end network modeling",
+        "Partner-validated solution simulations",
+        "Virtual replicas of compute, networking, storage, and security",
+        "Pre-validation of provisioning and automation scripts"
+      ],
+      "industries": [
+        "Data centers and AI factories",
+        "AI factories / data centers",
+        "AI factories",
+        "Data centers"
+      ],
+      "mentions": 3,
+      "evidence_count": 7,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/data-center/products/dsx/sim/",
+          "title": "NVIDIA DSX Sim | Design and Simulate AI Factories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/ai-factory-digital-twins/",
+          "title": "AI Factory Digital Twins for Design and Operations | NVIDIA"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "dsx-sim",
+      "name": "NVIDIA DSX Sim",
+      "family": "Simulation",
+      "one_liner": "Toolset for designing and simulating complete AI factories as high-fidelity digital twins before and after construction.",
+      "what_it_does": "DSX Sim is part of the NVIDIA DSX AI Factory Platform and combines ecosystem partner tools, DSX Blueprints, DSX SimReady assets, and DSX Air in one shared model. That model spans compute, networking, power, cooling, facilities, and software so teams can compare design options and predict system behavior.",
+      "digital_twin_role": "It is the environment for building and running AI factory digital twins, used to model power, cooling, workload, and network tradeoffs and to rehearse commissioning and failure scenarios before they hit production.",
+      "capabilities": [
+        "Cross-system trade-off testing",
+        "Pre-construction design validation",
+        "Comparison of expected versus real-world performance",
+        "Combined physical and logical AI factory twins",
+        "Thermal, electrical, and mechanical simulation via partner tools",
+        "Pre-deployment testing of layouts, power, cooling, and failure scenarios"
+      ],
+      "industries": [
+        "Data centers and AI factories",
+        "AI factories / data centers",
+        "Architecture / Engineering / Construction",
+        "Energy",
+        "AI factories",
+        "Data centers",
+        "Power and cooling equipment",
+        "Energy grid"
+      ],
+      "mentions": 3,
+      "evidence_count": 9,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/data-center/products/dsx/sim/",
+          "title": "NVIDIA DSX Sim | Design and Simulate AI Factories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/ai-factory-digital-twins/",
+          "title": "AI Factory Digital Twins for Design and Operations | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "dsx",
+        "dsx-air",
+        "dsx-exchange",
+        "omniverse-dsx-blueprint",
+        "openusd"
+      ]
+    },
+    {
+      "id": "isaac-ros",
+      "name": "NVIDIA Isaac ROS",
+      "family": "Other",
+      "one_liner": "Open source, GPU-accelerated ROS 2 packages, models, and tools for building and deploying AI-powered robots.",
+      "what_it_does": "Isaac ROS is an open source collection of ROS 2 packages, AI models, and deployment workflows optimized for NVIDIA hardware, usable alongside standard ROS 2 tools. It covers perception, localization and mapping, 3D reconstruction, pose estimation, and motion planning, and uses NITROS to accelerate data flow through ROS 2 graphs.",
+      "digital_twin_role": "Robot software built with Isaac ROS can be trained, tested, and validated virtually in Isaac Sim and Isaac Lab before deployment on Jetson hardware, giving a simulation-to-deployment workflow.",
+      "capabilities": [
+        "ROS 2 acceleration with NITROS",
+        "Isaac ROS GEMs for perception and navigation",
+        "Real-time AI policy deployment on hardware",
+        "ROS 2 based robot software foundation",
+        "Accelerated, optimized robotics software",
+        "AI models and workflows"
+      ],
+      "industries": [
+        "Robotics",
+        "Robotic manipulation",
+        "Autonomous mobile robots",
+        "Warehouses",
+        "Factories",
+        "Manufacturing"
+      ],
+      "mentions": 3,
+      "evidence_count": 8,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        },
+        {
+          "url": "https://developer.nvidia.com/isaac/ros/",
+          "title": "Isaac ROS (Robot Operating System) | NVIDIA Developer"
+        },
+        {
+          "url": "https://docs.nvidia.com/learning/physical-ai/",
+          "title": "Physical AI Learning — Physical AI Learning"
+        }
+      ],
+      "builds_on": [
+        "isaac-lab",
+        "isaac-sim"
+      ]
+    },
+    {
+      "id": "omniverse-nurec",
+      "name": "NVIDIA Omniverse NuRec",
+      "family": "Platform",
+      "one_liner": "Neural reconstruction tools that turn recorded driving sensor data into 3D Gaussian scenes for simulation.",
+      "what_it_does": "NuRec provides open APIs, libraries, and datasets for reconstructing real-world scenes as 3D Gaussian environments from recorded sensor data. Reconstructed scenes can be rendered from new trajectories and sensor viewpoints, and companion tools extract assets, fix novel-view artifacts, and correct lighting.",
+      "digital_twin_role": "It converts real drives into reconstructed digital replicas of driving environments that AV teams can replay, modify, and use for closed-loop testing.",
+      "capabilities": [
+        "Neural reconstruction from real-world sensor data",
+        "3D Gaussian splatting-based rendering",
+        "Real-world capture input for Isaac Sim",
+        "3D Gaussian-based neural reconstruction from sensor data",
+        "Full-scale driving environment reconstruction",
+        "Novel trajectories and sensor views"
+      ],
+      "industries": [
+        "Robotics",
+        "Autonomous vehicles",
+        "Robotaxis"
+      ],
+      "mentions": 3,
+      "evidence_count": 6,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/sim/",
+          "title": "Isaac Sim - Robotics Simulation and Synthetic Data Generation | NVIDIA Developer"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/solutions/autonomous-vehicles/simulation/",
+          "title": "Simulation for Robotaxis and Autonomous Vehicles | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac-sim",
+        "omniverse"
+      ]
+    },
+    {
+      "id": "physicsnemo",
+      "name": "NVIDIA PhysicsNeMo",
+      "family": "Physics AI",
+      "one_liner": "Open-source Python framework for building and training physics AI surrogate models at scale.",
+      "what_it_does": "PhysicsNeMo is an open-source, PyTorch-based framework with model architectures, training pipelines, and reference examples for physics machine learning. It supports approaches from physics-informed neural networks to neural operators, GNNs, and diffusion models, with distributed multi-GPU, multi-node training.",
+      "digital_twin_role": "It is used to build AI surrogate models that run as near-real-time digital twins of physical systems across domains such as fluid dynamics, structural mechanics, and electromagnetics.",
+      "capabilities": [
+        "Physics-ML model architectures (PINNs, neural operators, GNNs, diffusion)",
+        "End-to-end training pipeline from geometry to PDEs",
+        "Data- and model-parallel multi-node training",
+        "Reference pipelines for CFD, thermal, and weather use cases",
+        "Pretrained models for customization",
+        "Near-real-time surrogate inference"
+      ],
+      "industries": [
+        "Manufacturing",
+        "Computer-aided engineering",
+        "Aerospace",
+        "Automotive",
+        "Semiconductor design",
+        "Energy and power grids",
+        "Weather and climate",
+        "Oil and gas reservoir simulation"
+      ],
+      "mentions": 3,
+      "evidence_count": 10,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/physicsnemo/",
+          "title": "PhysicsNeMo | NVIDIA Developer"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/foxconn-develops-physical-ai-enabled-smart-factories-with-digital-twins/",
+          "title": "Foxconn | NVIDIA Customer Stories"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/computational-fluid-dynamics-simulation/",
+          "title": "Computational Fluid Dynamics (CFD) Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "earth-2",
+        "omniverse"
+      ]
+    },
+    {
+      "id": "aerial-omniverse-digital-twin",
+      "name": "NVIDIA Aerial Omniverse Digital Twin",
+      "family": "Domain digital twin",
+      "one_liner": "Platform for building physically accurate digital twins of 5G and 6G wireless networks, from towers to cities.",
+      "what_it_does": "Aerial Omniverse Digital Twin (AODT) creates virtual 5G and 6G radio networks with high-fidelity radio simulation, scaling from a single tower to a whole city. It is part of the NVIDIA AI Aerial software suite; the AODT Client is on GitHub, while the complete software is available through the NVIDIA 6G Developer Program.",
+      "digital_twin_role": "It is the network digital twin itself, used to run large-scale, photorealistic wireless network scenarios when designing AI-native 6G networks.",
+      "capabilities": [
+        "5G and 6G system simulation at tower to city scale",
+        "Software-defined RAN and user-equipment simulators",
+        "Realistic terrain properties",
+        "Site-specific base-station algorithm development",
+        "Real-time model training",
+        "Physically accurate virtual 5G/6G networks"
+      ],
+      "industries": [
+        "Telecommunications",
+        "Wireless networks",
+        "5G and 6G wireless networks",
+        "AI-RAN"
+      ],
+      "mentions": 2,
+      "evidence_count": 5,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/topics/telecommunications/ai-aerial/",
+          "title": "NVIDIA Aerial | NVIDIA Developer"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    },
+    {
+      "id": "earth-2",
+      "name": "NVIDIA Earth-2",
+      "family": "Domain digital twin",
+      "one_liner": "Open family of AI models, libraries, and tools for weather and climate forecasting and visualization.",
+      "what_it_does": "Earth-2 bundles open AI weather models (medium-range, nowcasting, data assimilation, CorrDiff downscaling, FourCastNet 3) with libraries and frameworks covering the full forecasting pipeline. Teams can run, fine-tune, and deploy these models on their own infrastructure using Earth2Studio, replacing slower physics-based workflows with an end-to-end AI pipeline.",
+      "digital_twin_role": "Earth-2 acts as a planetary digital twin, aggregating global climate simulation and geospatial data and now incorporating city-scale simulation data for street-level analysis, visualized through an Omniverse/OpenUSD-based service.",
+      "capabilities": [
+        "Global-scale weather and climate simulation",
+        "AI surrogate-based high-resolution simulation",
+        "Interactive visualization",
+        "Extreme weather forecasting",
+        "15-day global forecasts for 70+ weather variables",
+        "0-6 hour generative nowcasting of hazardous weather"
+      ],
+      "industries": [
+        "Weather and climate",
+        "Disaster response and planning",
+        "Weather and climate forecasting",
+        "Energy",
+        "Finance",
+        "Government weather agencies",
+        "Infrastructure and urban planning",
+        "Carbon capture and storage"
+      ],
+      "mentions": 2,
+      "evidence_count": 6,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/high-performance-computing/earth-2/",
+          "title": "AI-Powered Climate and Weather Simulation Platform | NVIDIA Earth-2"
+        }
+      ],
+      "builds_on": [
+        "omniverse",
+        "openusd",
+        "physicsnemo"
+      ]
+    },
+    {
+      "id": "metropolis",
+      "name": "NVIDIA Metropolis",
+      "family": "Operations AI",
+      "one_liner": "Vision AI platform and ecosystem for building and deploying visual AI agents from edge to cloud.",
+      "what_it_does": "Metropolis is a vision AI application platform with a partner ecosystem that provides VLM and CV models plus microservices for video ingestion, storage, and model tuning. Developers use it to build video analytics agents for multi-camera tracking, visual inspection, and natural-language video search.",
+      "digital_twin_role": "It provides the perception and video analytics agents that work alongside digital twins, for example in Mega-based robot fleet management and train station operations with Omniverse.",
+      "capabilities": [
+        "Video analytics AI agents with multi-camera tracking",
+        "Natural language queries over live or archived video",
+        "Automated visual inspection and defect detection",
+        "VLM and CV models with video ingestion and tuning microservices",
+        "Edge-to-cloud deployment",
+        "Video analytics AI agents"
+      ],
+      "industries": [
+        "Smart cities",
+        "Manufacturing",
+        "Retail",
+        "Logistics and warehouses",
+        "Transportation",
+        "Public sector",
+        "Robot safety",
+        "Electronics manufacturing"
+      ],
+      "mentions": 2,
+      "evidence_count": 6,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/autonomous-machines/intelligent-video-analytics-platform/",
+          "title": "Metropolis: Intelligent Vision AI for Smart Infrastructure | NVIDIA"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/case-studies/foxconn-develops-physical-ai-enabled-smart-factories-with-digital-twins/",
+          "title": "Foxconn | NVIDIA Customer Stories"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    },
+    {
+      "id": "omniverse-blueprint-for-interactive-fluid-simulation",
+      "name": "NVIDIA Omniverse Blueprint for interactive fluid simulation",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Reference workflow for building real-time CAE digital twins from accelerated solvers, simulation AI, and virtual environments.",
+      "what_it_does": "This blueprint shows developers how to combine accelerated solvers, simulation AI, and 3D virtual environments into interactive engineering digital twins. CAE software vendors can use it to give users real-time visualization and analysis while a product is being designed.",
+      "digital_twin_role": "It is a template for building real-time product digital twins, such as a virtual wind tunnel, that respond immediately to design changes.",
+      "capabilities": [
+        "Combines accelerated solvers with simulation AI",
+        "Real-time visualization and analysis of products in development",
+        "Virtual wind tunnel style interactive simulation",
+        "Integration into CAE software tools",
+        "Real-time visualization of CFD results",
+        "AI surrogate models predicting flow fields near instantly"
+      ],
+      "industries": [
+        "Computer-aided engineering",
+        "Aerospace",
+        "Automotive",
+        "Electronics design",
+        "Manufacturing",
+        "Energy"
+      ],
+      "mentions": 2,
+      "evidence_count": 6,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/computational-fluid-dynamics-simulation/",
+          "title": "Computational Fluid Dynamics (CFD) Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "cuda-x",
+        "omniverse",
+        "openusd",
+        "physicsnemo"
+      ]
+    },
+    {
+      "id": "newton",
+      "name": "Newton",
+      "family": "Simulation",
+      "one_liner": "Open-source, extensible GPU physics engine for robot simulation and policy training, built on Warp and OpenUSD.",
+      "what_it_does": "Newton is an open-source physics engine that keeps the physical model, state, controls, contacts, and solver as separate pieces so developers can pick the numerical method that suits their problem. It uses MJWarp as a key rigid-body solver and can be coupled with other solvers, such as a deformable cable solver, for multiphysics tasks.",
+      "digital_twin_role": "It supplies the physics backend for virtual robot environments in Isaac Sim and Isaac Lab, where robot policies are trained and validated before being moved to physical hardware.",
+      "capabilities": [
+        "GPU-accelerated parallel physics simulation",
+        "Modular, selectable solvers including MJWarp for rigid bodies",
+        "Coupled multiphysics for deformable objects such as cables",
+        "Physics backend for Isaac Lab policy training",
+        "Physics backend for software-in-the-loop testing in Isaac Sim",
+        "GPU-accelerated physics"
+      ],
+      "industries": [
+        "Robotics",
+        "Robot learning",
+        "Locomotion",
+        "Contact-rich manipulation and assembly"
+      ],
+      "mentions": 2,
+      "evidence_count": 5,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/physics-simulation-for-robotics/",
+          "title": "Physics Simulation for Robotics | NVIDIA Use Case"
+        },
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "isaac-lab",
+        "isaac-sim",
+        "openusd",
+        "warp"
+      ]
+    },
+    {
+      "id": "alpamayo",
+      "name": "NVIDIA Alpamayo",
+      "family": "Other",
+      "one_liner": "Open VLA models, simulation frameworks, and datasets for reasoning-based autonomous driving, including AlpaSim closed-loop evaluation.",
+      "what_it_does": "Alpamayo is an open family of vision-language-action models, simulation frameworks, and datasets aimed at AVs that reason about driving scenes and explain their decisions. Its AlpaSim component runs closed-loop simulation and varies traffic agent behavior, and AlpaGym supports closed-loop reinforcement learning of policies.",
+      "digital_twin_role": "It supplies the closed-loop simulation and evaluation layer in which driving policies are tested against reconstructed or generated scenes whose future states react to the policy's decisions.",
+      "capabilities": [
+        "Reasoning-based VLA models for driving",
+        "Closed-loop evaluation with AlpaSim",
+        "Trajectory and traffic-agent behavior permutation",
+        "Closed-loop reinforcement learning with AlpaGym"
+      ],
+      "industries": [
+        "Autonomous vehicles",
+        "Robotaxis"
+      ],
+      "mentions": 1,
+      "evidence_count": 4,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/solutions/autonomous-vehicles/simulation/",
+          "title": "Simulation for Robotaxis and Autonomous Vehicles | NVIDIA"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "blueprint-for-smart-city-ai",
+      "name": "NVIDIA Blueprint for Smart City AI",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Blueprint combining city-scale digital twins and video analytics AI agents for urban planning and operations.",
+      "what_it_does": "This blueprint helps city operators build end-to-end AI solutions that pair city-scale digital twins with video analytics agents. It supports decisions on city design, traffic, and event response.",
+      "digital_twin_role": "It uses city-scale digital twins built with Omniverse libraries to generate synthetic traffic data and provide real-time awareness for city operations.",
+      "capabilities": [
+        "City-scale digital twins",
+        "Video analytics AI agents for real-time awareness",
+        "Fine-tuning AI models for city scenarios",
+        "Intelligent event response"
+      ],
+      "industries": [
+        "Smart cities",
+        "Urban planning and operations",
+        "Traffic management"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        }
+      ],
+      "builds_on": [
+        "cosmos",
+        "omniverse"
+      ]
+    },
+    {
+      "id": "cuda-x",
+      "name": "NVIDIA CUDA-X",
+      "family": "Other",
+      "one_liner": "GPU-optimized libraries that accelerate CFD solvers by orders of magnitude.",
+      "what_it_does": "CUDA-X is a set of GPU-optimized libraries that software providers use to move the numerically heavy parts of fluid simulation off the CPU. CAE vendors use it to cut simulation times from days to hours and to run higher-fidelity simulations.",
+      "digital_twin_role": "Its accelerated solvers produce the high-fidelity results and training data behind AI surrogates and real-time CFD digital twins.",
+      "capabilities": [
+        "GPU-accelerated CFD solvers",
+        "Billion-cell scale simulation",
+        "Training data generation for AI surrogates"
+      ],
+      "industries": [
+        "Computer-aided engineering",
+        "Aerospace",
+        "Automotive"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/computational-fluid-dynamics-simulation/",
+          "title": "Computational Fluid Dynamics (CFD) Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    },
+    {
+      "id": "dsx",
+      "name": "NVIDIA DSX",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Full-stack AI factory platform unifying design, simulation, and operations to minimize token cost.",
+      "what_it_does": "DSX brings together reference designs, open software libraries, workflow guides, and NVIDIA compute for designing, building, and running AI factories. It spans components such as DSX Sim, DSX MaxLPS, DSX Flex, DSX Exchange, and DSX OS that coordinate power, cooling, compute, and operations as one system.",
+      "digital_twin_role": "Through DSX Sim, AI factory facilities, infrastructure, and IT systems are modeled together before construction so builders can validate layouts and performance before installing hardware.",
+      "capabilities": [
+        "AI factory reference designs",
+        "Pre-construction simulation of facility and IT systems",
+        "Dynamic power management across GPU, rack, and workload",
+        "Grid-responsive power orchestration",
+        "Real-time operational data exchange across IT and OT",
+        "Automated provisioning and fleet health operations"
+      ],
+      "industries": [
+        "AI factories / data centers",
+        "Cloud providers",
+        "Power and cooling equipment",
+        "Architecture, engineering, and construction"
+      ],
+      "mentions": 1,
+      "evidence_count": 3,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/data-center/products/dsx/",
+          "title": "AI Factory Design, Simulation, and Operations  | NVIDIA DSX Platform"
+        }
+      ],
+      "builds_on": [
+        "omniverse-dsx-blueprint"
+      ]
+    },
+    {
+      "id": "dsx-exchange",
+      "name": "NVIDIA DSX Exchange",
+      "family": "Other",
+      "one_liner": "Common communication layer connecting compute, network, power, and cooling signals across IT, OT, and operations systems.",
+      "what_it_does": "DSX Exchange provides a shared, secure integration layer for signals from compute, network, energy, power, and cooling systems. It carries real-time telemetry from the physical AI factory into the digital model.",
+      "digital_twin_role": "Keeps the AI factory digital twin live after deployment by streaming operational telemetry into it, so teams and partner agents can compare actual and simulated behavior and optimize operations.",
+      "capabilities": [
+        "IT/OT signal integration",
+        "Real-time telemetry into the digital twin",
+        "Support for partner operations agents"
+      ],
+      "industries": [
+        "AI factories / data centers",
+        "Energy"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/ai-factory-digital-twins/",
+          "title": "AI Factory Digital Twins for Design and Operations | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "dsx-sim"
+      ]
+    },
+    {
+      "id": "factory-operations-blueprint",
+      "name": "NVIDIA Factory Operations Blueprint",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "Reference design connecting factory systems, live production data, and AI agents through an operational twin.",
+      "what_it_does": "The blueprint is a reference design for linking factory systems, real-time production data, and specialized AI agents. Manufacturers use it to build multi-agent workflows for tasks like root-cause analysis and quality control.",
+      "digital_twin_role": "It runs an operational twin built with Omniverse libraries that connects live factory data to AI agents on top of existing factory digital twins.",
+      "capabilities": [
+        "Operational twin connected to real-time production data",
+        "Multi-agent factory workflows",
+        "Root-cause analysis acceleration",
+        "Quality control and robot utilization optimization"
+      ],
+      "industries": [
+        "Manufacturing"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    },
+    {
+      "id": "isaac",
+      "name": "NVIDIA Isaac",
+      "family": "Other",
+      "one_liner": "Open robotics development platform combining simulation, robot learning, accelerated libraries, AI models, and reference workflows.",
+      "what_it_does": "Isaac is NVIDIA's open platform for building AI robots such as AMRs, robot arms, manipulators, and humanoids. It bundles simulation and robot learning frameworks, CUDA-accelerated libraries, optimized AI models, and reference workflows covering development through deployment and operation.",
+      "digital_twin_role": "Its simulation frameworks let teams design, test, and train robots in physically based virtual environments before deploying them.",
+      "capabilities": [
+        "Simulation and robot learning frameworks",
+        "CUDA-accelerated robotics libraries",
+        "Optimized robot AI models",
+        "Reference workflows for robot development"
+      ],
+      "industries": [
+        "Robotics",
+        "Autonomous mobile robots",
+        "Robot arms and manipulators",
+        "Humanoids"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "isaac-gr00t",
+      "name": "NVIDIA Isaac GR00T",
+      "family": "Other",
+      "one_liner": "Research initiative and development platform for accelerating humanoid robot development.",
+      "what_it_does": "Isaac GR00T is a research initiative and platform for humanoid robotics. It works with general-purpose robot foundation models such as Isaac GR00T N and with data pipelines including Isaac GR00T-Mimic and Isaac GR00T-Dreams.",
+      "digital_twin_role": "The page does not describe a direct digital twin role beyond its data pipelines for producing humanoid training data.",
+      "capabilities": [
+        "Humanoid robot development platform",
+        "General-purpose robot foundation models (Isaac GR00T N)",
+        "Data pipelines via Isaac GR00T-Mimic and Isaac GR00T-Dreams"
+      ],
+      "industries": [
+        "Humanoid robotics"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://developer.nvidia.com/isaac/",
+          "title": "Isaac - AI Robot Development Platform | NVIDIA Developer"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "osmo",
+      "name": "NVIDIA OSMO",
+      "family": "Other",
+      "one_liner": "Cloud-native orchestration platform for scaling multi-stage robotics workloads across on-prem and cloud infrastructure.",
+      "what_it_does": "OSMO orchestrates, visualizes, and manages complex, multi-container robotics pipelines across on-premises, private, and public clouds. It covers tasks from synthetic data generation through model training, reinforcement learning, and software-in-the-loop testing.",
+      "digital_twin_role": "Coordinates the interdependent simulation, data generation, training, and testing jobs that run against digital twin environments.",
+      "capabilities": [
+        "Multi-stage workload orchestration",
+        "Hybrid and multi-cloud deployment",
+        "Data and model lineage tracing",
+        "Workload visualization and management"
+      ],
+      "industries": [
+        "Robotics",
+        "Humanoids",
+        "Autonomous mobile robots",
+        "Industrial manipulators"
+      ],
+      "mentions": 1,
+      "evidence_count": 1,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/robotics-simulation/",
+          "title": "Robotics Simulation | Use Case | NVIDIA"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "omniverse-blueprint-for-av-simulation",
+      "name": "NVIDIA Omniverse Blueprint for AV simulation",
+      "family": "Blueprint / reference workflow",
+      "one_liner": "API-based reference workflow for large-scale, physically based sensor simulation for autonomous vehicle development.",
+      "what_it_does": "This API-based reference workflow lets AV simulation developers build high-fidelity digital twins and render physically based sensor output. It covers cameras, lidars, and radars at large scale.",
+      "digital_twin_role": "It is used to build driving-environment digital twins that generate realistic sensor data for training, testing, and validating autonomous vehicles.",
+      "capabilities": [
+        "Large-scale, high-fidelity sensor simulation",
+        "Physically based camera, lidar, and radar rendering",
+        "API-based integration into partner simulators"
+      ],
+      "industries": [
+        "Automotive",
+        "Autonomous vehicles"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/digital-twin/",
+          "title": "What Is a Digital Twin? | NVIDIA Glossary"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    },
+    {
+      "id": "omniverse-cloud-sensor-rtx",
+      "name": "NVIDIA Omniverse Cloud Sensor RTX",
+      "family": "Simulation",
+      "one_liner": "Microservices for physically accurate camera, lidar, and radar simulation to train and validate autonomous machines.",
+      "what_it_does": "Omniverse Cloud Sensor RTX is a set of microservices that simulate sensors with physical accuracy. Built on OpenUSD and using RTX ray tracing and neural rendering, it generates high-fidelity camera, lidar, and radar data for training and validating physical AI in a safe, repeatable way.",
+      "digital_twin_role": "Produces simulated sensor output from digital twins of operational environments, so perception models can be trained and tested against ground truth before real-world deployment.",
+      "capabilities": [
+        "Physically accurate sensor simulation",
+        "Camera, lidar, and radar data generation",
+        "RTX ray tracing and neural rendering",
+        "Microservice delivery"
+      ],
+      "industries": [
+        "Autonomous vehicles",
+        "Robotics",
+        "Smart spaces",
+        "Healthcare"
+      ],
+      "mentions": 1,
+      "evidence_count": 3,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/glossary/sensor-simulation/",
+          "title": "What Is Sensor Simulation? | NVIDIA Glossary"
+        }
+      ],
+      "builds_on": [
+        "omniverse",
+        "openusd"
+      ]
+    },
+    {
+      "id": "warp",
+      "name": "NVIDIA Warp",
+      "family": "Other",
+      "one_liner": "Python framework for writing GPU-accelerated simulation kernels that connect to machine-learning frameworks.",
+      "what_it_does": "Warp is a Python framework for building GPU-accelerated simulation and spatial-computing kernels and hooking them into machine-learning frameworks. MJWarp implements MuJoCo physics in Warp, and Newton is built on it.",
+      "digital_twin_role": "It is the GPU compute layer underneath the Newton physics engine and MJWarp, enabling many simulated robot environments to run in parallel.",
+      "capabilities": [
+        "GPU-accelerated simulation kernels in Python",
+        "Spatial-computing kernels",
+        "Integration with machine-learning frameworks",
+        "High-throughput parallel simulation via MJWarp"
+      ],
+      "industries": [
+        "Robotics"
+      ],
+      "mentions": 1,
+      "evidence_count": 2,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/use-cases/physics-simulation-for-robotics/",
+          "title": "Physics Simulation for Robotics | NVIDIA Use Case"
+        }
+      ],
+      "builds_on": []
+    },
+    {
+      "id": "cuopt",
+      "name": "NVIDIA cuOpt",
+      "family": "Operations AI",
+      "one_liner": "Open-source GPU-accelerated decision optimization engine for routing, scheduling, and large-scale mathematical programming.",
+      "what_it_does": "cuOpt is an open-source solver that uses GPUs to tackle optimization problems with millions of variables and constraints, including linear and quadratic programming and vehicle routing, with mixed integer programming in beta. It can be used standalone, plugged into existing models built in tools like AMPL, CVXPY, PuLP, GAMSPy, and JuMP, or driven by AI agents through cuOpt agent skills.",
+      "digital_twin_role": "When integrated with Omniverse digital twins, cuOpt optimizes logistics by simulating real-world fleet operations virtually, supporting dynamic scheduling, route optimization, and predictive planning.",
+      "capabilities": [
+        "GPU-accelerated LP, QP, and vehicle routing solvers",
+        "Beta mixed integer programming focused on fast feasible solutions",
+        "Dynamic and batch re-optimization in near real time",
+        "Integration with AMPL, CVXPY, PuLP, GAMSPy, and JuMP models",
+        "Agent skills for formulating, solving, and explaining optimization problems"
+      ],
+      "industries": [
+        "Supply chain management",
+        "Fleet management",
+        "Last-mile delivery",
+        "Field dispatch",
+        "Job scheduling",
+        "Portfolio optimization",
+        "Energy markets"
+      ],
+      "mentions": 1,
+      "evidence_count": 4,
+      "sources": [
+        {
+          "url": "https://www.nvidia.com/en-us/ai-data-science/products/cuopt/",
+          "title": "Decision Optimization on NVIDIA cuOpt | NVIDIA"
+        }
+      ],
+      "builds_on": [
+        "omniverse"
+      ]
+    }
+  ]
+}

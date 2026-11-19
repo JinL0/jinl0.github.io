@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Technical design: building the Digital Twins product map | Jin Liu</title>
+  <meta name="description" content="Design doc: Playwright crawler, Claude structured extraction with a grounding check, deterministic merge, and a static animated site.">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="./">Digital Twins <span>/</span> product map</a>
+      <nav>
+        <a href="./">Overview</a>
+        <a href="docs.html" aria-current="page">Technical doc</a>
+        <a href="https://jinl0.github.io/">jinl0.github.io</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Shared SVG defs for every diagram -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#8d8c86"/>
+      </marker>
+      <marker id="arrow-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#76b900"/>
+      </marker>
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.45"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="wrap doc">
+    <nav class="toc" aria-label="Contents">
+      <div class="eyebrow" style="margin-bottom:10px">Contents</div>
+      <a href="#summary">1. Summary</a>
+      <a href="#goals">2. Goals &amp; non-goals</a>
+      <a href="#arch">3. Architecture</a>
+      <a href="#crawl">4. Stage 1: Crawl</a>
+      <a href="#extract">5. Stage 2: Extract</a>
+      <a href="#merge">6. Stage 3: Merge</a>
+      <a href="#frontend">7. Frontend</a>
+      <a href="#quality">8. Quality &amp; evaluation</a>
+      <a href="#responsible">9. Responsible scraping</a>
+      <a href="#tradeoffs">10. Trade-offs</a>
+      <a href="#next">11. Next steps</a>
+      <a href="#run">12. Reproduce</a>
+    </nav>
+
+    <article>
+      <div class="eyebrow">Design doc · Jin Liu · <span data-meta="generated_at"></span></div>
+      <h1 style="font-size:40px">How the Digital Twins product map is built</h1>
+      <p class="lede">A three-stage pipeline (crawl → extract → merge) turns public product pages into a small JSON catalog.
+        A static site then renders that catalog with animations. No backend, no database, and every summary on the site can be traced to a source page.</p>
+      <div class="stats" id="doc-stats"></div>
+
+      <section id="summary">
+        <h2>1. Summary</h2>
+        <ul>
+          <li><strong>Crawl:</strong> Playwright drives headless Chromium over <span data-meta="pages_crawled"></span> public pages
+            (<span data-meta-k="chars_crawled"></span> characters). It renders JavaScript, honors robots.txt, waits 1.5 s between requests, and discovers links one hop from 9 seed pages.</li>
+          <li><strong>Extract:</strong> Claude (<code data-meta="model"></code>) reads each page and returns JSON that matches a Pydantic schema through
+            structured outputs. Every product record must include verbatim evidence quotes, and code checks that each quote appears in the page.</li>
+          <li><strong>Merge:</strong> a deterministic Python step (no LLM) canonicalizes names, dedupes across pages, votes on categories, and keeps only dependency edges between products in the catalog.</li>
+          <li><strong>Publish:</strong> hand-written HTML, CSS and JavaScript on GitHub Pages fetch <code>data/products.json</code> and render the stack diagram, catalog and canvas animation.</li>
+        </ul>
+      </section>
+
+      <section id="goals">
+        <h2>2. Goals &amp; non-goals</h2>
+        <table>
+          <tr><th>Goals</th><th>Non-goals</th></tr>
+          <tr><td>An accurate, browsable map of NVIDIA's digital-twin products and how they depend on each other</td><td>Being an official or complete source; nvidia.com stays authoritative</td></tr>
+          <tr><td>Every claim traceable to a source URL; hallucinations caught automatically</td><td>Republishing NVIDIA's page text or images</td></tr>
+          <tr><td>Re-runnable end to end with three commands; cheap (single-digit dollars)</td><td>Real-time freshness; a monthly refresh is enough</td></tr>
+          <tr><td>Zero-ops hosting: static files only</td><td>A backend, search index or database</td></tr>
+        </table>
+      </section>
+
+      <section id="arch">
+        <h2>3. Architecture</h2>
+        <figure class="diagram">
+          <svg class="dg" viewBox="0 0 1000 390" role="img" aria-labelledby="d1t">
+            <title id="d1t">Pipeline architecture in four swimlanes: crawl, extract, merge, publish</title>
+            <!-- lanes -->
+            <rect class="lane" x="8" y="8" width="240" height="374" rx="10"/>
+            <rect class="lane" x="256" y="8" width="244" height="374" rx="10"/>
+            <rect class="lane" x="508" y="8" width="240" height="374" rx="10"/>
+            <rect class="lane" x="756" y="8" width="236" height="374" rx="10"/>
+            <text class="lane-title" x="24" y="30">1 · Crawl  (scrape.py)</text>
+            <text class="lane-title" x="272" y="30">2 · Extract  (extract.py)</text>
+            <text class="lane-title" x="524" y="30">3 · Merge  (merge.py)</text>
+            <text class="lane-title" x="772" y="30">4 · Publish  (static site)</text>
+
+            <!-- crawl -->
+            <g filter="url(#shadow)">
+              <rect class="box" x="28" y="46" width="200" height="46" rx="8"/>
+              <rect class="box hl" x="28" y="126" width="200" height="62" rx="8"/>
+              <rect class="box" x="28" y="222" width="150" height="50" rx="8"/>
+            </g>
+            <text class="t1" x="128" y="66" text-anchor="middle">Seed URLs (9)</text>
+            <text class="t2" x="128" y="82" text-anchor="middle">nvidia.com · developer.nvidia.com</text>
+            <text class="t1" x="128" y="150" text-anchor="middle">Playwright + Chromium</text>
+            <text class="t2" x="128" y="166" text-anchor="middle">renders JS · robots.txt · 1.5 s delay</text>
+            <text class="t2" x="128" y="180" text-anchor="middle">strips nav/footer → main text</text>
+            <text class="t1" x="103" y="243" text-anchor="middle">Link discovery</text>
+            <text class="t2" x="103" y="259" text-anchor="middle">1 hop · keyword filter</text>
+            <path class="store" d="M28,306 a100,8 0 0 0 200,0 v40 a100,8 0 0 1 -200,0 z M28,306 a100,8 0 0 1 200,0" />
+            <text class="t1" x="128" y="332" text-anchor="middle">raw/pages.jsonl</text>
+            <text class="t2" x="128" y="347" text-anchor="middle">git-ignored</text>
+            <path class="wire" d="M128,92 V124" marker-end="url(#arrow)"/>
+            <path class="wire" d="M103,188 V220" marker-end="url(#arrow)"/>
+            <path class="wire" d="M28,247 H16 V157 H26" marker-end="url(#arrow)"/>
+            <text class="lbl" x="110" y="208">filtered links → queue</text>
+            <path class="wire flow" d="M210,188 V296" marker-end="url(#arrow-g)"/>
+
+            <!-- extract -->
+            <g filter="url(#shadow)">
+              <rect class="box" x="276" y="46" width="204" height="46" rx="8" stroke-dasharray="5 4"/>
+              <rect class="box hl" x="276" y="126" width="204" height="62" rx="8"/>
+              <rect class="box" x="276" y="222" width="204" height="50" rx="8"/>
+            </g>
+            <text class="t1" x="378" y="66" text-anchor="middle">Anthropic API</text>
+            <text class="t2" x="378" y="82" text-anchor="middle">messages.parse · retries 429/5xx</text>
+            <text class="t1" x="378" y="150" text-anchor="middle">Claude extraction</text>
+            <text class="t2" x="378" y="166" text-anchor="middle">structured outputs → Pydantic</text>
+            <text class="t2" x="378" y="180" text-anchor="middle">4 pages in parallel</text>
+            <text class="t1" x="378" y="243" text-anchor="middle">Grounding check</text>
+            <text class="t2" x="378" y="259" text-anchor="middle">quote ∈ page text, else drop</text>
+            <path class="store" d="M276,306 a102,8 0 0 0 204,0 v40 a102,8 0 0 1 -204,0 z M276,306 a102,8 0 0 1 204,0"/>
+            <text class="t1" x="378" y="332" text-anchor="middle">raw/extractions.jsonl</text>
+            <text class="t2" x="378" y="347" text-anchor="middle">per-page JSON + token usage</text>
+            <path class="wire" d="M378,92 V124" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+            <path class="wire" d="M378,188 V220" marker-end="url(#arrow)"/>
+            <path class="wire flow" d="M378,272 V296" marker-end="url(#arrow-g)"/>
+            <path class="wire flow" d="M228,326 H252 V157 H274" marker-end="url(#arrow-g)"/>
+
+            <!-- merge -->
+            <g filter="url(#shadow)">
+              <rect class="box" x="528" y="126" width="200" height="62" rx="8"/>
+              <rect class="box" x="528" y="222" width="200" height="50" rx="8"/>
+            </g>
+            <text class="t1" x="628" y="150" text-anchor="middle">Canonicalize names</text>
+            <text class="t2" x="628" y="166" text-anchor="middle">strip ™/®/"NVIDIA" · alias map</text>
+            <text class="t2" x="628" y="180" text-anchor="middle">group records by key</text>
+            <text class="t1" x="628" y="243" text-anchor="middle">Resolve &amp; link</text>
+            <text class="t2" x="628" y="259" text-anchor="middle">vote family · union · keep edges</text>
+            <path class="store" d="M528,306 a100,8 0 0 0 200,0 v40 a100,8 0 0 1 -200,0 z M528,306 a100,8 0 0 1 200,0"/>
+            <text class="t1" x="628" y="332" text-anchor="middle">data/products.json</text>
+            <text class="t2" x="628" y="347" text-anchor="middle">published · summaries + links</text>
+            <path class="wire" d="M628,188 V220" marker-end="url(#arrow)"/>
+            <path class="wire flow" d="M628,272 V296" marker-end="url(#arrow-g)"/>
+            <path class="wire flow" d="M480,326 H504 V157 H526" marker-end="url(#arrow-g)"/>
+
+            <!-- publish -->
+            <g filter="url(#shadow)">
+              <rect class="box" x="774" y="126" width="200" height="62" rx="8"/>
+              <rect class="box" x="774" y="222" width="200" height="50" rx="8"/>
+              <rect class="box hl" x="774" y="300" width="200" height="54" rx="8"/>
+            </g>
+            <text class="t1" x="874" y="150" text-anchor="middle">Static site</text>
+            <text class="t2" x="874" y="166" text-anchor="middle">index.html · docs.html</text>
+            <text class="t2" x="874" y="180" text-anchor="middle">vanilla JS · SVG · Canvas</text>
+            <text class="t1" x="874" y="243" text-anchor="middle">GitHub Pages</text>
+            <text class="t2" x="874" y="259" text-anchor="middle">Jekyll passes files through</text>
+            <text class="t1" x="874" y="322" text-anchor="middle">Browser</text>
+            <text class="t2" x="874" y="338" text-anchor="middle">fetch(JSON) → render</text>
+            <path class="wire" d="M874,188 V220" marker-end="url(#arrow)"/>
+            <path class="wire" d="M874,272 V298" marker-end="url(#arrow)"/>
+            <path class="wire flow" d="M728,326 H772" marker-end="url(#arrow-g)"/>
+          </svg>
+          <figcaption>Figure 1. Pipeline architecture. Green dashed wires carry data between stages; cylinders are files on disk. Only <code>data/products.json</code> and the site are published.</figcaption>
+        </figure>
+        <p>Each stage reads the previous stage's file and writes its own, so any stage can be re-run alone. Re-merging after an alias fix costs nothing because it doesn't call the LLM.
+          JSON Lines files are easy to diff, <code>grep</code> and stream, and they are enough at this size (tens of pages). A queue or database would add moving parts without solving a real problem.</p>
+
+        <figure class="diagram">
+          <svg class="dg" viewBox="0 0 1000 440" role="img" aria-labelledby="d2t">
+            <title id="d2t">Sequence diagram for processing one page</title>
+            <g filter="url(#shadow)">
+              <rect class="box" x="20" y="12" width="120" height="36" rx="6"/>
+              <rect class="box" x="180" y="12" width="120" height="36" rx="6"/>
+              <rect class="box" x="340" y="12" width="120" height="36" rx="6"/>
+              <rect class="box" x="520" y="12" width="120" height="36" rx="6"/>
+              <rect class="box" x="680" y="12" width="120" height="36" rx="6"/>
+              <rect class="box" x="850" y="12" width="120" height="36" rx="6"/>
+            </g>
+            <text class="t1" x="80" y="35" text-anchor="middle">scrape.py</text>
+            <text class="t1" x="240" y="35" text-anchor="middle">Chromium</text>
+            <text class="t1" x="400" y="35" text-anchor="middle">nvidia.com</text>
+            <text class="t1" x="580" y="35" text-anchor="middle">extract.py</text>
+            <text class="t1" x="740" y="35" text-anchor="middle">Claude API</text>
+            <text class="t1" x="910" y="35" text-anchor="middle">merge.py</text>
+            <path class="life" d="M80,48 V430 M240,48 V430 M400,48 V430 M580,48 V430 M740,48 V430 M910,48 V430"/>
+            <rect class="act" x="74" y="64" width="12" height="178"/>
+            <rect class="act" x="234" y="80" width="12" height="96"/>
+            <rect class="act" x="574" y="250" width="12" height="120"/>
+            <rect class="act" x="734" y="266" width="12" height="48"/>
+            <rect class="act" x="904" y="380" width="12" height="40"/>
+
+            <path class="wire" d="M86,62 H104 V76 H88" marker-end="url(#arrow)"/>
+            <text class="lbl" x="110" y="72">robots.can_fetch(url)?</text>
+            <path class="wire" d="M86,92 H232" marker-end="url(#arrow)"/><text class="lbl" x="96" y="87">page.goto(url)</text>
+            <path class="wire" d="M246,110 H392" marker-end="url(#arrow)"/><text class="lbl" x="256" y="105">GET + JS bundles</text>
+            <path class="wire" d="M400,134 H248" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text class="lbl" x="296" y="129">200 · rendered DOM</text>
+            <path class="wire" d="M246,150 H264 V168 H248" marker-end="url(#arrow)"/><text class="lbl" x="270" y="162">wait networkidle (≤8 s)</text>
+            <path class="wire" d="M234,190 H88" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text class="lbl" x="96" y="185">main text, title, links</text>
+            <path class="wire" d="M86,214 H104 V232 H88" marker-end="url(#arrow)"/><text class="lbl" x="110" y="226">sleep 1.5 s · append pages.jsonl</text>
+
+            <path class="wire flow" d="M80,252 H572" marker-end="url(#arrow-g)"/><text class="lbl" x="250" y="246">pages.jsonl (offline hand-off)</text>
+            <path class="wire" d="M586,274 H732" marker-end="url(#arrow)"/><text class="lbl" x="594" y="269">messages.parse(system, page, schema)</text>
+            <path class="wire" d="M734,306 H588" stroke-dasharray="5 4" marker-end="url(#arrow)"/><text class="lbl" x="600" y="301">PageExtraction (validated)</text>
+            <path class="wire" d="M586,326 H604 V344 H588" marker-end="url(#arrow)"/><text class="lbl" x="610" y="338">ground(): drop unverified quotes / products</text>
+            <path class="wire flow" d="M586,382 H902" marker-end="url(#arrow-g)"/><text class="lbl" x="640" y="376">extractions.jsonl</text>
+            <path class="wire" d="M916,396 H934 V414 H918" marker-end="url(#arrow)"/><text class="lbl" x="896" y="410" text-anchor="end">canonicalize · dedupe → products.json</text>
+          </svg>
+          <figcaption>Figure 2. One page through the pipeline. Stages communicate only through files, so the crawl (slow, polite) and extraction (parallel, metered) run separately.</figcaption>
+        </figure>
+      </section>
+
+      <section id="crawl">
+        <h2>4. Stage 1: Crawl with Playwright</h2>
+        <p><strong>Why a real browser?</strong> Product pages on nvidia.com build much of their content with JavaScript. A plain HTTP GET often returns a shell page,
+          so Playwright renders the page in headless Chromium and reads the DOM after it loads.</p>
+        <pre><span class="c"># scrape.py (core of fetch)</span>
+resp = await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+await page.wait_for_load_state("networkidle", timeout=8_000)   <span class="c"># best effort</span>
+text = await page.evaluate("""() => {
+    const root = document.querySelector('main') || document.body;
+    const clone = root.cloneNode(true);
+    clone.querySelectorAll('nav, footer, header, script, style, [role=dialog]').forEach(n => n.remove());
+    return clone.innerText; }""")</pre>
+        <ul>
+          <li><strong>Scope control:</strong> 9 hand-picked seeds plus <em>one hop</em> of discovery. A discovered link is followed only if it stays on nvidia.com (<code>/en-us/</code>) or developer.nvidia.com, its path matches a topic list (<code>digital-twin|omniverse|blueprint|isaac|cosmos|dsx|…</code>), and it isn't news, a blog, events or a binary file. A hard cap (<code>--max 30</code>) bounds cost.</li>
+          <li><strong>Cleaning:</strong> nav bars, footers and cookie dialogs are removed before reading <code>innerText</code>. Without this, every page "mentions" every product in the mega-menu, and the extractor over-reports.</li>
+          <li><strong>Dedupe and redirects:</strong> URLs are normalized (fragment dropped, trailing slash), and the URL <em>after</em> redirects is stored. For example, <code>/omniverse/digital-twins/</code> redirects to the glossary page, so that page is kept only once.</li>
+          <li><strong>Change detection:</strong> each page stores a <code>sha256</code> of its text, so a scheduled refresh can skip unchanged pages before calling the LLM.</li>
+        </ul>
+      </section>
+
+      <section id="extract">
+        <h2>5. Stage 2: Extract with Claude</h2>
+        <p>Each page is one request. The response must match a Pydantic schema, and the SDK's <code>messages.parse()</code> sends it as a JSON schema through
+          <em>structured outputs</em>. Output that doesn't match the schema can't be generated, so the code needs no JSON-repair or retry-on-parse-error logic.</p>
+        <pre><span class="c"># extract.py</span>
+class Product(BaseModel):
+    name: str                 <span class="c"># official name as written on the page</span>
+    family: Family            <span class="c"># enum: Platform, Simulation, World foundation models, ...</span>
+    one_liner: str
+    what_it_does: str         <span class="c"># own words, not copied marketing text</span>
+    digital_twin_role: str
+    capabilities: list[str]
+    industries: list[str]
+    builds_on: list[str]      <span class="c"># -> dependency edges</span>
+    evidence: list[str]       <span class="c"># 2-4 quotes copied EXACTLY from the page</span>
+
+response = client.messages.parse(model="<span data-meta="model"></span>", max_tokens=16000,
+    output_config={"effort": "medium"}, system=SYSTEM,
+    messages=[{"role": "user", "content": f"&lt;page url=… title=…&gt;{text}&lt;/page&gt;"}],
+    output_format=PageExtraction)</pre>
+        <h3>The grounding check</h3>
+        <p>A schema guarantees the <em>shape</em> of the answer, not whether it's <em>true</em>. Each record therefore has to cite the page.
+          After the response arrives, <code>ground()</code> normalizes whitespace and case, then string-searches every evidence quote in the page text.
+          Quotes that aren't found are removed, and a product left with no verified quote is dropped entirely. The check is cheap and deterministic, and it catches the most common failure: a product the model "knows about" but this page never describes.</p>
+        <pre>def ground(extraction, page_text):
+    haystack = norm(page_text)
+    for p in extraction.products:
+        good = [q for q in p.evidence if norm(q) in haystack]
+        if good: kept.append({**p.model_dump(), "evidence": good})</pre>
+        <ul>
+          <li><strong>Prompt rules</strong> that mattered: only products the page <em>describes</em> (not ones it merely links to), official names, summaries in the model's own words (to avoid republishing marketing copy), and quotes copied character for character.</li>
+          <li><strong>Throughput and errors:</strong> 4 worker threads, and the SDK retries 429 and 5xx errors with backoff (<code>max_retries=4</code>). Auth and bad-request errors stop the run immediately. Any other per-page failure is logged and doesn't kill the batch.</li>
+          <li><strong>Cost:</strong> this run used <span data-meta-k="tokens_in"></span> input and <span data-meta-k="tokens_out"></span> output tokens, about <span id="cost"></span> at list price.</li>
+        </ul>
+      </section>
+
+      <section id="merge">
+        <h2>6. Stage 3: Merge deterministically</h2>
+        <p>Popular products appear on many pages under slightly different names ("NVIDIA Isaac Sim", "Isaac Sim™"). Merging uses plain Python on purpose: it is free to re-run, gives the same output every time, and is easy to debug.</p>
+        <ol>
+          <li><strong>Canonical key:</strong> strip ™/®/©, a leading "NVIDIA", case and whitespace, then apply a small hand-maintained <code>ALIASES</code> map (e.g. "universal scene description" → "openusd"). The alias map grows by reading each run's output: human review where it's cheap.</li>
+          <li><strong>Resolve fields:</strong> family is a majority vote. Summary text comes from the best record, preferring the product's own page and then the most verified quotes. Capabilities and industries are a frequency-ranked union, capped at 6 and 8.</li>
+          <li><strong>Edges:</strong> <code>builds_on</code> names are canonicalized too. An edge is kept only if both ends are in the catalog, so the stack diagram never points at a node that doesn't exist.</li>
+        </ol>
+        <figure class="diagram">
+          <svg class="dg" viewBox="0 0 1000 250" role="img" aria-labelledby="d3t">
+            <title id="d3t">Data model: Page to PageExtraction to ProductRecord to Product</title>
+            <g filter="url(#shadow)">
+              <rect class="box" x="16" y="30" width="210" height="190" rx="8"/>
+              <rect class="box" x="270" y="30" width="200" height="190" rx="8"/>
+              <rect class="box" x="514" y="30" width="210" height="190" rx="8"/>
+              <rect class="box hl" x="770" y="30" width="214" height="190" rx="8"/>
+            </g>
+            <g class="t1"><text x="30" y="54">Page</text><text x="284" y="54">PageExtraction</text><text x="528" y="54">ProductRecord</text><text x="784" y="54">Product (published)</text></g>
+            <path class="wire" d="M16,64 H226 M270,64 H470 M514,64 H724 M770,64 H984"/>
+            <g class="t2">
+              <text x="30" y="84">url (after redirects)</text><text x="30" y="102">title</text><text x="30" y="120">text  (never published)</text>
+              <text x="30" y="138">links[]</text><text x="30" y="156">sha256</text><text x="30" y="174">fetched_at, depth</text>
+              <text x="284" y="84">page_kind</text><text x="284" y="102">customers[]</text><text x="284" y="120">grounding stats</text>
+              <text x="284" y="138">usage (tokens)</text><text x="284" y="156">products[] →</text>
+              <text x="528" y="84">name, family</text><text x="528" y="102">one_liner, what_it_does</text><text x="528" y="120">digital_twin_role</text>
+              <text x="528" y="138">capabilities[], industries[]</text><text x="528" y="156">builds_on[]</text><text x="528" y="174">evidence[] (verified)</text>
+              <text x="784" y="84">id, name, family</text><text x="784" y="102">summaries (best record)</text><text x="784" y="120">capabilities (top 6)</text>
+              <text x="784" y="138">industries (top 8)</text><text x="784" y="156">builds_on[] → Product.id</text><text x="784" y="174">sources[] {url, title}</text>
+              <text x="784" y="192">mentions, evidence_count</text>
+            </g>
+            <path class="wire" d="M226,125 H268" marker-end="url(#arrow)"/><text class="lbl" x="232" y="118">1 : 1</text>
+            <path class="wire" d="M470,125 H512" marker-end="url(#arrow)"/><text class="lbl" x="476" y="118">1 : N</text>
+            <path class="wire" d="M724,125 H768" marker-end="url(#arrow)"/><text class="lbl" x="728" y="118">N : 1</text>
+            <path class="wire" d="M930,220 V238 H830 V222" marker-end="url(#arrow)"/><text class="lbl" x="836" y="248">builds_on (N : M, self)</text>
+          </svg>
+          <figcaption>Figure 3. Data model. Page text stays in the git-ignored <code>raw/</code> folder; only the right-most entity ships to the browser.</figcaption>
+        </figure>
+      </section>
+
+      <section id="frontend">
+        <h2>7. Frontend: HTML, CSS and JavaScript, no framework</h2>
+        <p>The site is two HTML files, one stylesheet and two scripts, served by GitHub Pages as-is. Without a build step, the repo deploys on every push and will still work in five years.</p>
+        <figure class="diagram">
+          <svg class="dg" viewBox="0 0 1000 240" role="img" aria-labelledby="d4t">
+            <title id="d4t">Frontend modules</title>
+            <g filter="url(#shadow)">
+              <rect class="box" x="20" y="40" width="180" height="56" rx="8"/>
+              <rect class="box hl" x="260" y="40" width="180" height="56" rx="8"/>
+              <rect class="box" x="500" y="16" width="220" height="34" rx="6"/><rect class="box" x="500" y="58" width="220" height="34" rx="6"/>
+              <rect class="box" x="500" y="100" width="220" height="34" rx="6"/><rect class="box" x="760" y="58" width="220" height="34" rx="6"/>
+              <rect class="box hl" x="260" y="160" width="180" height="56" rx="8"/>
+              <rect class="box" x="500" y="150" width="220" height="34" rx="6"/><rect class="box" x="500" y="192" width="220" height="34" rx="6"/>
+              <rect class="box" x="760" y="171" width="220" height="34" rx="6"/>
+            </g>
+            <text class="t1" x="110" y="64" text-anchor="middle">data/products.json</text><text class="t2" x="110" y="82" text-anchor="middle">fetch(), no-cache</text>
+            <text class="t1" x="350" y="64" text-anchor="middle">catalog.js</text><text class="t2" x="350" y="82" text-anchor="middle">index by id · reverse edges</text>
+            <text class="t2" x="610" y="38" text-anchor="middle">stat tiles from meta</text>
+            <text class="t2" x="610" y="80" text-anchor="middle">stack: layers + SVG bezier edges</text>
+            <text class="t2" x="610" y="122" text-anchor="middle">filter chips · search · cards</text>
+            <text class="t2" x="870" y="80" text-anchor="middle">&lt;dialog&gt; drawer · sources</text>
+            <text class="t1" x="350" y="184" text-anchor="middle">twin-hero.js</text><text class="t2" x="350" y="202" text-anchor="middle">Canvas 2D · rAF loop</text>
+            <text class="t2" x="610" y="172" text-anchor="middle">state(t): one sim, shared</text>
+            <text class="t2" x="610" y="214" text-anchor="middle">render ×3: physical · twin · predicted</text>
+            <text class="t2" x="870" y="193" text-anchor="middle">pause off-screen · reduced motion</text>
+            <path class="wire flow" d="M200,68 H258" marker-end="url(#arrow-g)"/>
+            <path class="wire" d="M440,68 H470 V33 H498 M470,68 V75 H498 M470,68 V117 H498" marker-end="url(#arrow)"/>
+            <path class="wire" d="M720,75 H758" marker-end="url(#arrow)"/><text class="lbl" x="724" y="70">click</text>
+            <path class="wire" d="M440,188 H470 V167 H498 M470,188 V209 H498" marker-end="url(#arrow)"/>
+            <path class="wire" d="M720,188 H758" marker-end="url(#arrow)"/>
+          </svg>
+          <figcaption>Figure 4. Frontend modules. Everything below the JSON boundary is presentation, so the pipeline can change without touching the UI.</figcaption>
+        </figure>
+        <ul>
+          <li><strong>Hero animation:</strong> a single function <code>state(t)</code> computes the conveyor offset, arm angles and the number of boxes placed.
+            The same scene function draws it three times: solid (physical), wireframe (twin), and dashed at <code>t + 350 ms</code> (the twin's prediction). That is the core idea of a digital twin, shown in about 150 lines of Canvas 2D.
+            The loop pauses when the canvas scrolls off-screen (<code>IntersectionObserver</code>) and renders one still frame for users who prefer reduced motion.</li>
+          <li><strong>Dependency tracing:</strong> hovering over a pill measures pill positions with <code>getBoundingClientRect</code> and draws cubic Bézier curves in an SVG overlay, with an animated <code>stroke-dashoffset</code>. Unrelated pills fade out.</li>
+          <li><strong>Color:</strong> eight product families use a fixed-order categorical palette, validated on the dark surface (worst adjacent colorblind ΔE 8.4, every color ≥ 3:1 contrast). Color always appears with a text label and is never the only cue. NVIDIA green is used only for UI accents, never for data.</li>
+          <li><strong>Accessibility:</strong> cards and pills are real <code>&lt;button&gt;</code>s, the drawer is a native <code>&lt;dialog&gt;</code> (focus trap and Esc for free), the canvas has a text description, and all user and page text is escaped before insertion.</li>
+        </ul>
+      </section>
+
+      <section id="quality">
+        <h2>8. Quality &amp; evaluation</h2>
+        <div class="stats" id="quality-stats"></div>
+        <ul>
+          <li><strong>Automatic:</strong> verified-quote rate, and the number of product records dropped for having no verified quote (above). A sudden fall in the verified-quote rate after a page redesign is the signal to check the crawler's text cleaning.</li>
+          <li><strong>Manual:</strong> after each run, spot-check about 10 products against their source pages for wrong category, wrong dependency, or a summary that overstates the page. Fixes go into <code>ALIASES</code> or the prompt rules, never hand-edited JSON.</li>
+          <li><strong>Known limits:</strong> a verified quote proves the page says <em>something</em> about the product, not that every summary sentence is supported. Dependencies are only as complete as the pages that state them. One-hop crawling misses products with no link from the seeds.</li>
+        </ul>
+      </section>
+
+      <section id="responsible">
+        <h2>9. Responsible scraping</h2>
+        <ul>
+          <li>Python's <code>urllib.robotparser</code> checks robots.txt before every request. One browser tab, a 1.5 s delay between requests, and a descriptive user agent with a contact URL.</li>
+          <li>Raw page text stays local (<code>raw/</code> is git-ignored). The site publishes only short machine-written summaries with links back to nvidia.com.</li>
+          <li>Clearly labeled as unofficial; product names are NVIDIA trademarks; no NVIDIA logos or images are used.</li>
+        </ul>
+      </section>
+
+      <section id="tradeoffs">
+        <h2>10. Trade-offs &amp; alternatives considered</h2>
+        <table>
+          <tr><th>Decision</th><th>Chosen</th><th>Alternative</th><th>Why</th></tr>
+          <tr><td>Fetching</td><td>Playwright (headless Chromium)</td><td><code>requests</code> + BeautifulSoup</td><td>Pages render content with JavaScript; a browser sees what users see. It costs about 1–3 s per page, which is fine at this scale.</td></tr>
+          <tr><td>Extraction</td><td>LLM + JSON schema</td><td>CSS selectors per template</td><td>Pages use many different templates, and selectors break when a page is redesigned. The LLM also writes the summaries.</td></tr>
+          <tr><td>Hallucination control</td><td>Verbatim evidence + string match</td><td>A second LLM call as judge</td><td>Deterministic and free. An LLM judge is a good next layer for checking summary faithfulness.</td></tr>
+          <tr><td>Merge</td><td>Rules + alias map</td><td>LLM entity resolution / embeddings</td><td>About 40 entities: rules are reproducible and reviewable. Switch to embeddings if the catalog grows 10×.</td></tr>
+          <tr><td>Storage</td><td>JSON Lines files</td><td>SQLite / Postgres</td><td>Tens of records, with diffs in git. A database is worth it with history and incremental refresh.</td></tr>
+          <tr><td>Frontend</td><td>Vanilla JS, SVG, Canvas</td><td>React + D3 / Three.js</td><td>No build step, fast load, and small enough to read in one sitting.</td></tr>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>11. Next steps</h2>
+        <ul>
+          <li><strong>Scheduled refresh:</strong> a monthly GitHub Action runs the crawl, skips pages whose <code>sha256</code> hasn't changed, extracts the rest, re-merges, and opens a PR showing the JSON diff for review.</li>
+          <li><strong>Eval set:</strong> about 20 hand-labeled pages (expected products, families and edges) to measure precision and recall when the prompt or model changes.</li>
+          <li><strong>Faithfulness judge:</strong> a second pass that checks each summary sentence against the page and flags anything it can't support.</li>
+          <li><strong>3D:</strong> render the hero cell from a small OpenUSD file with three.js, so the twin is described by the same scene format it explains.</li>
+        </ul>
+      </section>
+
+      <section id="run" style="border-bottom:0">
+        <h2>12. Reproduce</h2>
+        <pre>cd nvdadigitaltwins/pipeline
+uv venv .venv --python 3.12 &amp;&amp; uv pip install --python .venv/bin/python -r requirements.txt
+.venv/bin/python -m playwright install chromium
+
+.venv/bin/python scrape.py --max 30        <span class="c"># → raw/pages.jsonl       (~2 min)</span>
+export ANTHROPIC_API_KEY=...               <span class="c"># personal key</span>
+.venv/bin/python extract.py                <span class="c"># → raw/extractions.jsonl (~3 min)</span>
+.venv/bin/python merge.py                  <span class="c"># → ../data/products.json</span>
+
+cd .. &amp;&amp; python3 -m http.server 8000      <span class="c"># preview at http://localhost:8000</span></pre>
+        <p class="small muted">Source: <a href="https://github.com/JinL0/jinl0.github.io/tree/main/nvdadigitaltwins">github.com/JinL0/jinl0.github.io/nvdadigitaltwins</a></p>
+      </section>
+    </article>
+  </div>
+
+  <footer>
+    <div class="wrap">Unofficial and not affiliated with or endorsed by NVIDIA. Product names are trademarks of NVIDIA Corporation.</div>
+  </footer>
+  <script type="module" src="assets/docs.js"></script>
+</body>
+</html>

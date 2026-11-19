@@ -32,7 +32,27 @@ ALIASES = {
     "cosmos platform": "cosmos",
     "earth-2 platform": "earth-2",
     "physicsnemo framework": "physicsnemo",
+    # Mega: pages write "Mega, an NVIDIA Omniverse Blueprint", "Mega Omniverse Blueprint", ...
+    "mega omniverse blueprint": "mega nvidia omniverse blueprint",
+    "mega": "mega nvidia omniverse blueprint",
+    # The DSX Blueprint page describes it as "a framework within DSX Sim for designing and operating
+    # large-scale AI factories"; the AI-factory glossary page still uses the earlier blueprint name.
+    "omniverse blueprint for ai factory design and operation": "omniverse dsx blueprint",
+    "omniverse blueprint for ai factory design and operations": "omniverse dsx blueprint",
+    "dsx blueprint": "omniverse dsx blueprint",
+    "omniverse libraries": "omniverse",
+    "omniverse kit": "omniverse",
+    "newton physics": "newton",
+    "cosmos reason": "cosmos",
+    "dsx ai factory platform": "dsx",
 }
+# Families where per-page votes split and the source text is clear. key -> family
+FAMILY_OVERRIDES = {
+    "dsx sim": "Simulation",  # "The NVIDIA Omniverse DSX Blueprint is ... a framework within DSX Sim"
+}
+# Customers only count when named on pages that show product use, not on community/dev-hub pages
+# (which list ambassadors' employers, hardware-kit vendors, image credits).
+CUSTOMER_PAGE_KINDS = {"product page", "use-case page", "case study"}
 
 
 def key(name: str) -> str:
@@ -60,7 +80,8 @@ def main():
     groups: dict[str, list[dict]] = defaultdict(list)
     customers = Counter()
     for r in rows:
-        customers.update(c.strip() for c in r.get("customers", []) if c.strip())
+        if r.get("page_kind") in CUSTOMER_PAGE_KINDS:
+            customers.update(c.strip() for c in r.get("customers", []) if c.strip())
         for p in r.get("products", []):
             groups[key(p["name"])].append({**p, "_url": r["url"], "_title": r["title"]})
 
@@ -72,7 +93,7 @@ def main():
             "id": re.sub(r"[^a-z0-9]+", "-", k).strip("-"),
             "key": k,
             "name": Counter(p["name"] for p in recs).most_common(1)[0][0],
-            "family": Counter(p["family"] for p in recs).most_common(1)[0][0],
+            "family": FAMILY_OVERRIDES.get(k) or Counter(p["family"] for p in recs).most_common(1)[0][0],
             "one_liner": best["one_liner"],
             "what_it_does": best["what_it_does"],
             "digital_twin_role": best["digital_twin_role"],
@@ -85,6 +106,9 @@ def main():
         })
 
     ids = {p["key"]: p["id"] for p in products}
+    unmatched = Counter(b for p in products for b in p["builds_on_raw"] if b not in ids)
+    if unmatched:  # candidates for ALIASES (or genuinely out-of-catalog tech like CUDA, RTX)
+        print("builds_on names not in catalog:", ", ".join(f"{b} ({n})" for b, n in unmatched.most_common()))
     for p in products:
         p["builds_on"] = sorted({ids[b] for b in p.pop("builds_on_raw") if b in ids})
         p["sources"] = [{"url": u, "title": t} for u, t in p["sources"]]
@@ -96,12 +120,16 @@ def main():
     meta = {
         "generated_at": time.strftime("%Y-%m-%d", time.gmtime()),
         "model": "claude-opus-5-5",
+        # "claude-api" = extract.py called the API (token counts below are real);
+        # "claude-code-session" = extracted in a Claude Code session, ingested with --from-dir (no API tokens metered)
+        "extraction_mode": Counter(r.get("extractor", "claude-api") for r in rows).most_common(1)[0][0],
         "pages_crawled": len(pages),
         "chars_crawled": sum(p["chars"] for p in pages),
         "pages_with_products": sum(1 for r in rows if r.get("products")),
         "pages_failed": sum(1 for r in rows if "error" in r),
         "products": len(products),
-        "edges": sum(len(p["builds_on"]) for p in products),
+        # builds_on = "built on or integrates with": count each product pair once, undirected
+        "edges": len({frozenset((p["id"], b)) for p in products for b in p["builds_on"]}),
         "quotes_total": sum(x["quotes"] for x in g),
         "quotes_grounded": sum(x["grounded"] for x in g),
         "records_dropped_ungrounded": sum(x["products_in"] - x["products_out"] for x in g),

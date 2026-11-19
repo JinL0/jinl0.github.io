@@ -65,7 +65,7 @@
             (<span data-meta-k="chars_crawled"></span> characters). It renders JavaScript, honors robots.txt, waits 1.5 s between requests, and discovers links one hop from 9 seed pages.</li>
           <li><strong>Extract:</strong> Claude (<code data-meta="model"></code>) reads each page and returns JSON that matches a Pydantic schema through
             structured outputs. Every product record must include verbatim evidence quotes, and code checks that each quote appears in the page.</li>
-          <li><strong>Merge:</strong> a deterministic Python step (no LLM) canonicalizes names, dedupes across pages, votes on categories, and keeps only dependency edges between products in the catalog.</li>
+          <li><strong>Merge:</strong> a deterministic Python step (no LLM) canonicalizes names, dedupes across pages, votes on categories, keeps only connections between products in the catalog, and applies a few reviewed overrides (aliases, family fixes, which page types count for customers).</li>
           <li><strong>Publish:</strong> hand-written HTML, CSS and JavaScript on GitHub Pages fetch <code>data/products.json</code> and render the stack diagram, catalog and canvas animation.</li>
         </ul>
       </section>
@@ -255,7 +255,7 @@ class Product(BaseModel):
     digital_twin_role: str
     capabilities: list[str]
     industries: list[str]
-    builds_on: list[str]      <span class="c"># -> dependency edges</span>
+    builds_on: list[str]      <span class="c"># "built on or integrates with" -> connections</span>
     evidence: list[str]       <span class="c"># 2-4 quotes copied EXACTLY from the page</span>
 
 response = client.messages.parse(model="<span data-meta="model"></span>", max_tokens=16000,
@@ -274,7 +274,8 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
         <ul>
           <li><strong>Prompt rules</strong> that mattered: only products the page <em>describes</em> (not ones it merely links to), official names, summaries in the model's own words (to avoid republishing marketing copy), and quotes copied character for character.</li>
           <li><strong>Throughput and errors:</strong> 4 worker threads, and the SDK retries 429 and 5xx errors with backoff (<code>max_retries=4</code>). Auth and bad-request errors stop the run immediately. Any other per-page failure is logged and doesn't kill the batch.</li>
-          <li><strong>Cost:</strong> this run used <span data-meta-k="tokens_in"></span> input and <span data-meta-k="tokens_out"></span> output tokens, about <span id="cost"></span> at list price.</li>
+          <li><strong>Cost:</strong> <span id="cost-line">A full API run is about 30 pages × 7K tokens ≈ 200K input tokens, roughly $1–2 at Opus 5.5 list price.</span></li>
+          <li><strong>Two ways to run it:</strong> <code>extract.py</code> calls the API directly. <code>extract.py --from-dir</code> ingests per-page JSON produced elsewhere, for example by Claude in a Claude Code session working through the same schema and rules. Both paths go through the same Pydantic validation, the same <code>ground()</code> check, and the same merge, so the published data meets the same bar either way.</li>
         </ul>
       </section>
 
@@ -354,7 +355,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
           <li><strong>Hero animation:</strong> a single function <code>state(t)</code> computes the conveyor offset, arm angles and the number of boxes placed.
             The same scene function draws it three times: solid (physical), wireframe (twin), and dashed at <code>t + 350 ms</code> (the twin's prediction). That is the core idea of a digital twin, shown in about 150 lines of Canvas 2D.
             The loop pauses when the canvas scrolls off-screen (<code>IntersectionObserver</code>) and renders one still frame for users who prefer reduced motion.</li>
-          <li><strong>Dependency tracing:</strong> hovering over a pill measures pill positions with <code>getBoundingClientRect</code> and draws cubic Bézier curves in an SVG overlay, with an animated <code>stroke-dashoffset</code>. Unrelated pills fade out.</li>
+          <li><strong>Connection tracing:</strong> hovering over a pill measures pill positions with <code>getBoundingClientRect</code> and draws cubic Bézier curves in an SVG overlay, with an animated <code>stroke-dashoffset</code>. Unrelated pills fade out.</li>
           <li><strong>Color:</strong> eight product families use a fixed-order categorical palette, validated on the dark surface (worst adjacent colorblind ΔE 8.4, every color ≥ 3:1 contrast). Color always appears with a text label and is never the only cue. NVIDIA green is used only for UI accents, never for data.</li>
           <li><strong>Accessibility:</strong> cards and pills are real <code>&lt;button&gt;</code>s, the drawer is a native <code>&lt;dialog&gt;</code> (focus trap and Esc for free), the canvas has a text description, and all user and page text is escaped before insertion.</li>
         </ul>
@@ -365,8 +366,9 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
         <div class="stats" id="quality-stats"></div>
         <ul>
           <li><strong>Automatic:</strong> verified-quote rate, and the number of product records dropped for having no verified quote (above). A sudden fall in the verified-quote rate after a page redesign is the signal to check the crawler's text cleaning.</li>
-          <li><strong>Manual:</strong> after each run, spot-check about 10 products against their source pages for wrong category, wrong dependency, or a summary that overstates the page. Fixes go into <code>ALIASES</code> or the prompt rules, never hand-edited JSON.</li>
-          <li><strong>Known limits:</strong> a verified quote proves the page says <em>something</em> about the product, not that every summary sentence is supported. Dependencies are only as complete as the pages that state them. One-hop crawling misses products with no link from the seeds.</li>
+          <li><strong>Manual:</strong> after each run, spot-check about 10 products against their source pages for wrong category, wrong connection, or a summary that overstates the page. Fixes go into <code>ALIASES</code> or the prompt rules, never hand-edited JSON.</li>
+          <li><strong>Reading the 100%:</strong> on the <code>--from-dir</code> path the extractor ran the same quote check while writing and fixed misses, so the published rate is measured after self-correction, not on a first pass. The check still guarantees that every quote shown is on the page.</li>
+          <li><strong>Known limits:</strong> a verified quote proves the page says <em>something</em> about the product, not that every summary sentence is supported. Connections are only as complete as the pages that state them, and they are undirected: the pages rarely say which product depends on which. One-hop crawling misses products with no link from the seeds.</li>
         </ul>
       </section>
 

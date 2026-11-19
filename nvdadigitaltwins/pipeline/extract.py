@@ -97,7 +97,7 @@ def extract_page(client: anthropic.Anthropic, page: dict) -> dict:
         }],
         output_format=PageExtraction,
     )
-    base = {"url": page["url"], "title": page["title"], "sha256": page["sha256"],
+    base = {"url": page["url"], "title": page["title"], "sha256": page["sha256"], "extractor": "claude-api",
             "usage": {"input": response.usage.input_tokens, "output": response.usage.output_tokens}}
     if response.stop_reason != "end_turn" or response.parsed_output is None:
         return {**base, "error": f"stop_reason={response.stop_reason}"}
@@ -105,11 +105,37 @@ def extract_page(client: anthropic.Anthropic, page: dict) -> dict:
     return {**base, **extraction, "grounding": stats}
 
 
+def ingest(directory: Path) -> None:
+    """Offline path: validate per-page JSON produced outside the API (e.g. a Claude Code session)
+    with the same Pydantic schema and grounding check, then write extractions.jsonl."""
+    pages = {p["url"]: p for p in map(json.loads, PAGES.open())}
+    results = []
+    for f in sorted(directory.glob("page_*.json")):
+        raw = json.loads(f.read_text())
+        page = pages[raw["url"]]
+        extraction = PageExtraction.model_validate(raw)       # same schema as the API path
+        out, stats = ground(extraction, page["text"])
+        results.append({"url": page["url"], "title": page["title"], "sha256": page["sha256"],
+                        "extractor": "claude-code-session", **out, "grounding": stats})
+        print(f"  {stats['products_out']:2d} products  {stats['grounded']}/{stats['quotes']} quotes grounded  {page['url']}")
+    missing = set(pages) - {r["url"] for r in results}
+    if missing:
+        print(f"WARNING: {len(missing)} crawled pages have no extraction file")
+    with OUT.open("w") as fh:
+        for r in results:
+            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"wrote {len(results)} -> {OUT.relative_to(HERE)}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--from-dir", type=Path, default=None,
+                    help="ingest page_*.json files produced offline instead of calling the API")
     args = ap.parse_args()
+    if args.from_dir:
+        return ingest(args.from_dir)
 
     pages = [json.loads(l) for l in PAGES.open()][: args.limit]
     client = anthropic.Anthropic(max_retries=4)  # SDK retries 429/5xx with backoff

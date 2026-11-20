@@ -137,8 +137,18 @@ footer { padding: 36px 0 60px; color: var(--text-muted); font-size: 13px; }
 .toc { position: sticky; top: 76px; align-self: start; font-size: 14px; }
 .toc a { display: block; color: var(--text-secondary); padding: 4px 0; }
 .toc a:hover { color: var(--text-primary); text-decoration: none; }
+.toc { max-height: calc(100vh - 96px); overflow-y: auto; }
+.toc .grp { font: 600 11px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 4px; }
+.toc a.sub { padding: 3px 0 3px 14px; font-size: 13px; border-left: 1px solid var(--line); }
 .doc article { min-width: 0; }
 .doc article section { padding: 36px 0; }
+/* Part A / Part B: a part intro, then numbered subsections without heavy dividers */
+.doc article section.part { padding-bottom: 8px; border-bottom: 0; }
+.doc article section.part .eyebrow { margin-bottom: 6px; }
+.doc article section.sub { padding: 24px 0 28px; border-bottom: 1px dashed var(--line); }
+.doc section.sub h3 { font-size: 23px; margin: 4px 0 10px; letter-spacing: -0.2px; }
+.doc h3 .file { font: 500 12px/1 var(--mono); color: var(--text-muted); margin-left: 8px; vertical-align: middle; }
+.doc h4 { font-size: 16px; margin: 22px 0 6px; color: var(--text-primary); }
 .doc article p, .doc article li { color: var(--text-secondary); }
 .doc article strong { color: var(--text-primary); }
 pre { background: var(--surface-1); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; color: var(--text-secondary); }

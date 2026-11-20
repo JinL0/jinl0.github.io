@@ -40,22 +40,31 @@
       <a href="#summary">1. Summary</a>
       <a href="#goals">2. Goals &amp; non-goals</a>
       <a href="#arch">3. Architecture</a>
-      <a href="#crawl">4. Stage 1: Crawl</a>
-      <a href="#extract">5. Stage 2: Extract</a>
-      <a href="#merge">6. Stage 3: Merge</a>
-      <a href="#frontend">7. Frontend</a>
-      <a href="#quality">8. Quality &amp; evaluation</a>
-      <a href="#responsible">9. Responsible scraping</a>
-      <a href="#tradeoffs">10. Trade-offs</a>
-      <a href="#next">11. Next steps</a>
-      <a href="#run">12. Reproduce</a>
+      <div class="grp">A · Backend</div>
+      <a href="#backend">4. Data pipeline</a>
+      <a class="sub" href="#crawl">4.1 Crawl</a>
+      <a class="sub" href="#extract">4.2 Extract</a>
+      <a class="sub" href="#merge">4.3 Merge</a>
+      <a class="sub" href="#contract">4.4 products.json</a>
+      <div class="grp">B · Frontend</div>
+      <a href="#frontend">5. Static site</a>
+      <a class="sub" href="#fe-data">5.1 Load &amp; index</a>
+      <a class="sub" href="#fe-stack">5.2 Stack &amp; tracing</a>
+      <a class="sub" href="#fe-hero">5.3 Hero animation</a>
+      <a class="sub" href="#fe-a11y">5.4 Color &amp; a11y</a>
+      <div class="grp">Operations</div>
+      <a href="#quality">6. Quality &amp; evaluation</a>
+      <a href="#responsible">7. Responsible scraping</a>
+      <a href="#tradeoffs">8. Trade-offs</a>
+      <a href="#next">9. Next steps</a>
+      <a href="#run">10. Reproduce</a>
     </nav>
 
     <article>
       <div class="eyebrow">Design doc · Jin Liu · <span data-meta="generated_at"></span></div>
       <h1 style="font-size:40px">How the Digital Twins product map is built</h1>
       <p class="lede">A three-stage pipeline (crawl → extract → merge) turns public product pages into a small JSON catalog.
-        A static site then renders that catalog with animations. No backend, no database, and every summary on the site can be traced to a source page.</p>
+        A static site then renders that catalog with animations. The "backend" is an offline pipeline, so there is no server and no database at runtime, and every summary on the site can be traced to a source page.</p>
       <div class="stats" id="doc-stats"></div>
 
       <section id="summary">
@@ -77,7 +86,7 @@
           <tr><td>An accurate, browsable map of NVIDIA's digital-twin products and how they depend on each other</td><td>Being an official or complete source; nvidia.com stays authoritative</td></tr>
           <tr><td>Every claim traceable to a source URL; hallucinations caught automatically</td><td>Republishing NVIDIA's page text or images</td></tr>
           <tr><td>Re-runnable end to end with three commands; cheap (single-digit dollars)</td><td>Real-time freshness; a monthly refresh is enough</td></tr>
-          <tr><td>Zero-ops hosting: static files only</td><td>A backend, search index or database</td></tr>
+          <tr><td>Zero-ops hosting: static files only</td><td>A server, search index or database at runtime</td></tr>
         </table>
       </section>
 
@@ -173,7 +182,7 @@
             <path class="wire" d="M874,272 V298" marker-end="url(#arrow)"/>
             <path class="wire flow" d="M728,326 H772" marker-end="url(#arrow-g)"/>
           </svg>
-          <figcaption>Figure 1. Pipeline architecture. Green dashed wires carry data between stages; cylinders are files on disk. Only <code>data/products.json</code> and the site are published.</figcaption>
+          <figcaption>Figure 1. Pipeline architecture. Green dashed wires carry data between stages; cylinders are files on disk. Lanes 1–3 are the backend (section 4); lane 4 is the frontend (section 5). Only <code>data/products.json</code> and the site are published.</figcaption>
         </figure>
         <p>Each stage reads the previous stage's file and writes its own, so any stage can be re-run alone. Re-merging after an alias fix costs nothing because it doesn't call the LLM.
           JSON Lines files are easy to diff, <code>grep</code> and stream, and they are enough at this size (tens of pages). A queue or database would add moving parts without solving a real problem.</p>
@@ -222,31 +231,49 @@
         </figure>
       </section>
 
-      <section id="crawl">
-        <h2>4. Stage 1: Crawl with Playwright</h2>
+      <section id="backend" class="part">
+        <div class="eyebrow">Part A · Backend</div>
+        <h2>4. Backend: the offline data pipeline</h2>
+        <p>Three Python scripts run on a laptop (or in CI), never on a server. Nothing in this part runs when someone visits the site.
+          The only thing the backend hands to the frontend is one JSON file, <code>data/products.json</code> (4.4).</p>
+      </section>
+
+      <section id="crawl" class="sub">
+        <h3>4.1 Crawl with Playwright <span class="file">scrape.py</span></h3>
         <p><strong>Why a real browser?</strong> Product pages on nvidia.com build much of their content with JavaScript. A plain HTTP GET often returns a shell page,
           so Playwright renders the page in headless Chromium and reads the DOM after it loads.</p>
-        <pre><span class="c"># scrape.py (core of fetch)</span>
+        <pre><span class="c"># scrape.py: fetch one page and keep only the main content</span>
 resp = await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
 await page.wait_for_load_state("networkidle", timeout=8_000)   <span class="c"># best effort</span>
-text = await page.evaluate("""() => {
+text = await page.evaluate("""() =&gt; {
     const root = document.querySelector('main') || document.body;
     const clone = root.cloneNode(true);
-    clone.querySelectorAll('nav, footer, header, script, style, [role=dialog]').forEach(n => n.remove());
+    clone.querySelectorAll('nav, footer, header, script, style, [role=dialog]').forEach(n =&gt; n.remove());
     return clone.innerText; }""")</pre>
+        <p><strong>Scope control:</strong> 9 hand-picked seeds plus <em>one hop</em> of discovery. A discovered link is followed only if it stays on nvidia.com (<code>/en-us/</code>) or developer.nvidia.com,
+          its path matches a topic list, and it isn't news, a blog, events or a binary file. A hard cap (<code>--max 30</code>) bounds cost.</p>
+        <pre><span class="c"># scrape.py: one hop of keyword-filtered discovery from each seed</span>
+KEYWORDS = re.compile(r"digital-twin|omniverse|blueprint|isaac|cosmos|earth-2|mega|dsx|...", re.I)
+SKIP = re.compile(r"/(news|blog|events?|careers|shop|support|login|search|forums)/|\.(pdf|zip|png|jpg|mp4)$", re.I)
+
+if depth == 0:
+    for link in doc["links"]:
+        host = urlparse(link).netloc
+        in_scope = host == "developer.nvidia.com" or (host == "www.nvidia.com" and "/en-us/" in link)
+        if in_scope and KEYWORDS.search(urlparse(link).path) and not SKIP.search(link) and link not in seen:
+            queue.append((link, 1))   <span class="c"># depth 1: never expanded further</span></pre>
         <ul>
-          <li><strong>Scope control:</strong> 9 hand-picked seeds plus <em>one hop</em> of discovery. A discovered link is followed only if it stays on nvidia.com (<code>/en-us/</code>) or developer.nvidia.com, its path matches a topic list (<code>digital-twin|omniverse|blueprint|isaac|cosmos|dsx|…</code>), and it isn't news, a blog, events or a binary file. A hard cap (<code>--max 30</code>) bounds cost.</li>
           <li><strong>Cleaning:</strong> nav bars, footers and cookie dialogs are removed before reading <code>innerText</code>. Without this, every page "mentions" every product in the mega-menu, and the extractor over-reports.</li>
           <li><strong>Dedupe and redirects:</strong> URLs are normalized (fragment dropped, trailing slash), and the URL <em>after</em> redirects is stored. For example, <code>/omniverse/digital-twins/</code> redirects to the glossary page, so that page is kept only once.</li>
           <li><strong>Change detection:</strong> each page stores a <code>sha256</code> of its text, so a scheduled refresh can skip unchanged pages before calling the LLM.</li>
         </ul>
       </section>
 
-      <section id="extract">
-        <h2>5. Stage 2: Extract with Claude</h2>
+      <section id="extract" class="sub">
+        <h3>4.2 Extract with Claude <span class="file">extract.py</span></h3>
         <p>Each page is one request. The response must match a Pydantic schema, and the SDK's <code>messages.parse()</code> sends it as a JSON schema through
           <em>structured outputs</em>. Output that doesn't match the schema can't be generated, so the code needs no JSON-repair or retry-on-parse-error logic.</p>
-        <pre><span class="c"># extract.py</span>
+        <pre><span class="c"># extract.py: the schema is the prompt's contract</span>
 class Product(BaseModel):
     name: str                 <span class="c"># official name as written on the page</span>
     family: Family            <span class="c"># enum: Platform, Simulation, World foundation models, ...</span>
@@ -255,22 +282,28 @@ class Product(BaseModel):
     digital_twin_role: str
     capabilities: list[str]
     industries: list[str]
-    builds_on: list[str]      <span class="c"># "built on or integrates with" -> connections</span>
+    builds_on: list[str]      <span class="c"># "built on or integrates with" -&gt; connections</span>
     evidence: list[str]       <span class="c"># 2-4 quotes copied EXACTLY from the page</span>
 
 response = client.messages.parse(model="<span data-meta="model"></span>", max_tokens=16000,
     output_config={"effort": "medium"}, system=SYSTEM,
     messages=[{"role": "user", "content": f"&lt;page url=… title=…&gt;{text}&lt;/page&gt;"}],
     output_format=PageExtraction)</pre>
-        <h3>The grounding check</h3>
+        <h4>The grounding check</h4>
         <p>A schema guarantees the <em>shape</em> of the answer, not whether it's <em>true</em>. Each record therefore has to cite the page.
           After the response arrives, <code>ground()</code> normalizes whitespace and case, then string-searches every evidence quote in the page text.
           Quotes that aren't found are removed, and a product left with no verified quote is dropped entirely. The check is cheap and deterministic, and it catches the most common failure: a product the model "knows about" but this page never describes.</p>
-        <pre>def ground(extraction, page_text):
+        <pre><span class="c"># extract.py</span>
+def norm(s: str) -&gt; str:
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+def ground(extraction, page_text):
     haystack = norm(page_text)
+    kept = []
     for p in extraction.products:
-        good = [q for q in p.evidence if norm(q) in haystack]
-        if good: kept.append({**p.model_dump(), "evidence": good})</pre>
+        good = [q for q in p.evidence if norm(q) and norm(q) in haystack]
+        if good:                                  <span class="c"># no verified quote -&gt; product dropped</span>
+            kept.append({**p.model_dump(mode="json"), "evidence": good})</pre>
         <ul>
           <li><strong>Prompt rules</strong> that mattered: only products the page <em>describes</em> (not ones it merely links to), official names, summaries in the model's own words (to avoid republishing marketing copy), and quotes copied character for character.</li>
           <li><strong>Throughput and errors:</strong> 4 worker threads, and the SDK retries 429 and 5xx errors with backoff (<code>max_retries=4</code>). Auth and bad-request errors stop the run immediately. Any other per-page failure is logged and doesn't kill the batch.</li>
@@ -279,14 +312,51 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
         </ul>
       </section>
 
-      <section id="merge">
-        <h2>6. Stage 3: Merge deterministically</h2>
+      <section id="merge" class="sub">
+        <h3>4.3 Merge deterministically <span class="file">merge.py</span></h3>
         <p>Popular products appear on many pages under slightly different names ("NVIDIA Isaac Sim", "Isaac Sim™"). Merging uses plain Python on purpose: it is free to re-run, gives the same output every time, and is easy to debug.</p>
         <ol>
           <li><strong>Canonical key:</strong> strip ™/®/©, a leading "NVIDIA", case and whitespace, then apply a small hand-maintained <code>ALIASES</code> map (e.g. "universal scene description" → "openusd"). The alias map grows by reading each run's output: human review where it's cheap.</li>
           <li><strong>Resolve fields:</strong> family is a majority vote. Summary text comes from the best record, preferring the product's own page and then the most verified quotes. Capabilities and industries are a frequency-ranked union, capped at 6 and 8.</li>
-          <li><strong>Edges:</strong> <code>builds_on</code> names are canonicalized too. An edge is kept only if both ends are in the catalog, so the stack diagram never points at a node that doesn't exist.</li>
+          <li><strong>Edges:</strong> <code>builds_on</code> names are canonicalized too. An edge is kept only if both ends are in the catalog, so the stack diagram never points at a node that doesn't exist. Names that don't match are printed as candidates for <code>ALIASES</code>.</li>
         </ol>
+        <pre><span class="c"># merge.py: "NVIDIA Isaac Sim™" and "Isaac Sim" both become "isaac sim"</span>
+ALIASES = {"universal scene description": "openusd", "usd": "openusd", "omniverse kit": "omniverse", ...}
+
+def key(name: str) -&gt; str:
+    k = re.sub(r"[™®©]", "", name).lower()
+    k = re.sub(r"^nvidia\s+", "", k).strip()
+    k = re.sub(r"\s+", " ", k)
+    return ALIASES.get(k, k)
+
+<span class="c"># per group of records sharing a key: prefer the product's own page, then the most evidence</span>
+best = max(recs, key=lambda p: (k.split()[0] in p["_title"].lower(), len(p["evidence"])))
+family = FAMILY_OVERRIDES.get(k) or Counter(p["family"] for p in recs).most_common(1)[0][0]
+
+<span class="c"># keep an edge only if both ends made it into the catalog</span>
+p["builds_on"] = sorted({ids[b] for b in p.pop("builds_on_raw") if b in ids})</pre>
+      </section>
+
+      <section id="contract" class="sub">
+        <h3>4.4 The hand-off: <code>products.json</code></h3>
+        <p>This file is the whole interface between the two halves. The backend can change its crawler, model or merge rules freely as long as it writes this shape, and the frontend never sees page text.
+          A trimmed record:</p>
+        <pre><span class="c">// data/products.json (one of the products[], lists shortened)</span>
+{
+  "id": "isaac-sim",
+  "name": "NVIDIA Isaac Sim",
+  "family": "Simulation",
+  "one_liner": "Open-source robotics simulation framework for testing robots and generating synthetic data ...",
+  "what_it_does": "...",
+  "digital_twin_role": "It turns CAD and real-world captures into OpenUSD simulation scenes that act as digital twins ...",
+  "capabilities": ["Physically based robot and sensor simulation", "Software-in-the-loop and hardware-in-the-loop testing", ...],
+  "industries": ["Robotics", "Manufacturing", "Humanoid robots", ...],
+  "builds_on": ["cosmos", "isaac-lab", "newton", "omniverse", "openusd", ...],   <span class="c">// ids, always in the catalog</span>
+  "mentions": 7,                                                               <span class="c">// pages that described it</span>
+  "evidence_count": 21,                                                        <span class="c">// verified quotes behind it</span>
+  "sources": [{"url": "https://developer.nvidia.com/isaac/sim/", "title": "Isaac Sim - ..."}, ...]
+}</pre>
+        <p>Alongside <code>products</code>, a <code>meta</code> block (pages crawled, quotes verified, token usage, run date) feeds the live numbers on both pages, and <code>customers</code> lists companies named on product, use-case and case-study pages.</p>
         <figure class="diagram">
           <svg class="dg" viewBox="0 0 1000 250" role="img" aria-labelledby="d3t">
             <title id="d3t">Data model: Page to PageExtraction to ProductRecord to Product</title>
@@ -314,13 +384,14 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
             <path class="wire" d="M724,125 H768" marker-end="url(#arrow)"/><text class="lbl" x="728" y="118">N : 1</text>
             <path class="wire" d="M930,220 V238 H830 V222" marker-end="url(#arrow)"/><text class="lbl" x="836" y="248">builds_on (N : M, self)</text>
           </svg>
-          <figcaption>Figure 3. Data model. Page text stays in the git-ignored <code>raw/</code> folder; only the right-most entity ships to the browser.</figcaption>
+          <figcaption>Figure 3. Data model across the backend. Page text stays in the git-ignored <code>raw/</code> folder; only the right-most entity ships to the browser.</figcaption>
         </figure>
       </section>
 
-      <section id="frontend">
-        <h2>7. Frontend: HTML, CSS and JavaScript, no framework</h2>
-        <p>The site is two HTML files, one stylesheet and two scripts, served by GitHub Pages as-is. Without a build step, the repo deploys on every push and will still work in five years.</p>
+      <section id="frontend" class="part">
+        <div class="eyebrow">Part B · Frontend</div>
+        <h2>5. Frontend: HTML, CSS and JavaScript, no framework</h2>
+        <p>The site is two HTML files, one stylesheet and three small scripts, served by GitHub Pages as-is. Without a build step, the repo deploys on every push and will still work in five years.</p>
         <figure class="diagram">
           <svg class="dg" viewBox="0 0 1000 240" role="img" aria-labelledby="d4t">
             <title id="d4t">Frontend modules</title>
@@ -336,7 +407,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
             <text class="t1" x="110" y="64" text-anchor="middle">data/products.json</text><text class="t2" x="110" y="82" text-anchor="middle">fetch(), no-cache</text>
             <text class="t1" x="350" y="64" text-anchor="middle">catalog.js</text><text class="t2" x="350" y="82" text-anchor="middle">index by id · reverse edges</text>
             <text class="t2" x="610" y="38" text-anchor="middle">stat tiles from meta</text>
-            <text class="t2" x="610" y="80" text-anchor="middle">stack: layers + SVG bezier edges</text>
+            <text class="t2" x="610" y="80" text-anchor="middle">stack: layers + SVG curve edges</text>
             <text class="t2" x="610" y="122" text-anchor="middle">filter chips · search · cards</text>
             <text class="t2" x="870" y="80" text-anchor="middle">&lt;dialog&gt; drawer · sources</text>
             <text class="t1" x="350" y="184" text-anchor="middle">twin-hero.js</text><text class="t2" x="350" y="202" text-anchor="middle">Canvas 2D · rAF loop</text>
@@ -351,18 +422,86 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
           </svg>
           <figcaption>Figure 4. Frontend modules. Everything below the JSON boundary is presentation, so the pipeline can change without touching the UI.</figcaption>
         </figure>
+      </section>
+
+      <section id="fe-data" class="sub">
+        <h3>5.1 Load and index the data <span class="file">catalog.js</span></h3>
+        <p>One <code>fetch</code> on page load, with <code>no-cache</code> so a fresh merge shows up immediately. The script then builds two lookup tables.
+          <code>builds_on</code> means "built on or integrates with", and pages rarely say which side depends on which, so every edge is added in both directions.</p>
+        <pre><span class="c">// catalog.js</span>
+const res = await fetch("data/products.json", { cache: "no-cache" });
+const { meta, products, customers } = await res.json();
+const byId = Object.fromEntries(products.map((p) =&gt; [p.id, p]));
+const links = Object.fromEntries(products.map((p) =&gt; [p.id, new Set(p.builds_on)]));
+products.forEach((p) =&gt; p.builds_on.forEach((b) =&gt; links[b]?.add(p.id)));   <span class="c">// reverse edges</span>
+const neighbors = (id) =&gt; [...(links[id] || [])].filter((x) =&gt; x !== id &amp;&amp; byId[x])
+  .sort((a, b) =&gt; byId[b].mentions - byId[a].mentions);</pre>
+        <p>If the fetch fails (pipeline never run), the catalog shows a message pointing to this doc instead of an empty grid.</p>
+      </section>
+
+      <section id="fe-stack" class="sub">
+        <h3>5.2 Stack diagram and connection tracing</h3>
+        <p>The stack is plain HTML: each layer is a row that collects one or two product families, and each product is a <code>&lt;button class="pill"&gt;</code>.
+          The layer list is the only hand-written structure on the page; which products appear in it comes from the data.</p>
+        <pre><span class="c">// catalog.js: layers are defined by family, top to bottom</span>
+const LAYERS = [
+  { name: "Operate &amp; optimize",          fams: ["Operations AI"] },
+  { name: "Industry twins &amp; blueprints", fams: ["Blueprint / reference workflow", "Domain digital twin"] },
+  { name: "AI for the physical world",   fams: ["World foundation models", "Physics AI"] },
+  { name: "Simulate",                    fams: ["Simulation"] },
+  { name: "Describe &amp; render",          fams: ["Platform"] },
+  ...
+];</pre>
+        <p>Hovering (or focusing) a pill measures pill positions with <code>getBoundingClientRect</code> and draws a quadratic Bézier curve to each neighbor in an SVG overlay. Unrelated pills fade out.
+          The control point sits on the perpendicular bisector of the two pills, so curves arc around the pills in between instead of crossing them.
+          A CSS animation on <code>stroke-dashoffset</code> makes the dashes flow.</p>
+        <pre><span class="c">// catalog.js: inside trace(id), for each related pill (a = hovered, b = neighbor)</span>
+const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+const off = Math.min(90, len * 0.3) * (dx &gt;= 0 ? -1 : 1);   <span class="c">// bow size, capped at 90 px</span>
+const cx = (ax + bx) / 2 + (-dy / len) * off;              <span class="c">// midpoint, pushed along the normal</span>
+const cy = (ay + by) / 2 + (dx / len) * off;
+svg.insertAdjacentHTML("beforeend", `&lt;path d="M${ax},${ay} Q${cx},${cy} ${bx},${by}"/&gt;`);</pre>
+      </section>
+
+      <section id="fe-hero" class="sub">
+        <h3>5.3 Hero animation <span class="file">twin-hero.js</span></h3>
+        <p>A single function <code>state(t)</code> computes the conveyor offset, arm angles and the number of boxes placed. The same <code>scene()</code> function draws it three times:
+          solid (physical), wireframe (twin), and dashed at <code>t + 350 ms</code> (the twin's prediction). That is the core idea of a digital twin, shown in about 150 lines of Canvas 2D.</p>
+        <pre><span class="c">// twin-hero.js: one simulation state, three renders</span>
+function state(t) {
+  const p = (t % CYCLE) / CYCLE;                      <span class="c">// phase of one pick-and-place, 0..1</span>
+  let swing;
+  if (p &lt; 0.3) swing = 0;                             <span class="c">// reach to the belt</span>
+  else if (p &lt; 0.7) swing = ease((p - 0.3) / 0.4);    <span class="c">// carry to the pallet</span>
+  else swing = 1 - ease((p - 0.7) / 0.3);             <span class="c">// return</span>
+  return { p, swing, holding: p &gt;= 0.3 &amp;&amp; p &lt; 0.7, beltOffset: (t * 28) % 40, ... };
+}
+
+function frame(now) {
+  const t = reduced ? 1.2 : (now - t0) / 1000;       <span class="c">// reduced motion: one still frame</span>
+  const s = state(t);
+  scene(left,  w, s, "physical");                     <span class="c">// solid</span>
+  scene(right, w, s, "twin");                         <span class="c">// wireframe, same state</span>
+  scene(right, w, state(t + LOOKAHEAD), "predicted"); <span class="c">// dashed, 350 ms ahead</span>
+  if (running &amp;&amp; !reduced) requestAnimationFrame(frame);
+}</pre>
+        <p>The loop stops when the canvas scrolls off-screen (<code>IntersectionObserver</code> flips <code>running</code>) and restarts when it comes back.
+          The canvas is sized by <code>devicePixelRatio</code> (capped at 2) so lines stay sharp on retina screens without drawing 9× the pixels on 3× phones.</p>
+      </section>
+
+      <section id="fe-a11y" class="sub">
+        <h3>5.4 Color and accessibility</h3>
         <ul>
-          <li><strong>Hero animation:</strong> a single function <code>state(t)</code> computes the conveyor offset, arm angles and the number of boxes placed.
-            The same scene function draws it three times: solid (physical), wireframe (twin), and dashed at <code>t + 350 ms</code> (the twin's prediction). That is the core idea of a digital twin, shown in about 150 lines of Canvas 2D.
-            The loop pauses when the canvas scrolls off-screen (<code>IntersectionObserver</code>) and renders one still frame for users who prefer reduced motion.</li>
-          <li><strong>Connection tracing:</strong> hovering over a pill measures pill positions with <code>getBoundingClientRect</code> and draws cubic Bézier curves in an SVG overlay, with an animated <code>stroke-dashoffset</code>. Unrelated pills fade out.</li>
-          <li><strong>Color:</strong> eight product families use a fixed-order categorical palette, validated on the dark surface (worst adjacent colorblind ΔE 8.4, every color ≥ 3:1 contrast). Color always appears with a text label and is never the only cue. NVIDIA green is used only for UI accents, never for data.</li>
-          <li><strong>Accessibility:</strong> cards and pills are real <code>&lt;button&gt;</code>s, the drawer is a native <code>&lt;dialog&gt;</code> (focus trap and Esc for free), the canvas has a text description, and all user and page text is escaped before insertion.</li>
+          <li><strong>Color:</strong> eight product families use a fixed-order categorical palette, validated on the dark surface (worst adjacent colorblind ΔE 8.4, every color ≥ 3:1 contrast).
+            Color follows the family, never rank: <code>famColor = (f) =&gt; `var(--fam-${FAMILIES.indexOf(f) + 1 || 8})`</code>.
+            Color always appears with a text label and is never the only cue. NVIDIA green is used only for UI accents, never for data.</li>
+          <li><strong>Accessibility:</strong> cards and pills are real <code>&lt;button&gt;</code>s, so tracing works with the keyboard (<code>focusin</code>) as well as the mouse. The drawer is a native <code>&lt;dialog&gt;</code> (focus trap and Esc for free), and the canvas has a text description.</li>
+          <li><strong>Escaping:</strong> all page-derived text goes through one <code>esc()</code> helper before it is inserted as HTML, since the summaries come from an LLM reading third-party pages.</li>
         </ul>
       </section>
 
       <section id="quality">
-        <h2>8. Quality &amp; evaluation</h2>
+        <h2>6. Quality &amp; evaluation</h2>
         <div class="stats" id="quality-stats"></div>
         <ul>
           <li><strong>Automatic:</strong> verified-quote rate, and the number of product records dropped for having no verified quote (above). A sudden fall in the verified-quote rate after a page redesign is the signal to check the crawler's text cleaning.</li>
@@ -373,7 +512,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
       </section>
 
       <section id="responsible">
-        <h2>9. Responsible scraping</h2>
+        <h2>7. Responsible scraping</h2>
         <ul>
           <li>Python's <code>urllib.robotparser</code> checks robots.txt before every request. One browser tab, a 1.5 s delay between requests, and a descriptive user agent with a contact URL.</li>
           <li>Raw page text stays local (<code>raw/</code> is git-ignored). The site publishes only short machine-written summaries with links back to nvidia.com.</li>
@@ -382,7 +521,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
       </section>
 
       <section id="tradeoffs">
-        <h2>10. Trade-offs &amp; alternatives considered</h2>
+        <h2>8. Trade-offs &amp; alternatives considered</h2>
         <table>
           <tr><th>Decision</th><th>Chosen</th><th>Alternative</th><th>Why</th></tr>
           <tr><td>Fetching</td><td>Playwright (headless Chromium)</td><td><code>requests</code> + BeautifulSoup</td><td>Pages render content with JavaScript; a browser sees what users see. It costs about 1–3 s per page, which is fine at this scale.</td></tr>
@@ -395,7 +534,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
       </section>
 
       <section id="next">
-        <h2>11. Next steps</h2>
+        <h2>9. Next steps</h2>
         <ul>
           <li><strong>Scheduled refresh:</strong> a monthly GitHub Action runs the crawl, skips pages whose <code>sha256</code> hasn't changed, extracts the rest, re-merges, and opens a PR showing the JSON diff for review.</li>
           <li><strong>Eval set:</strong> about 20 hand-labeled pages (expected products, families and edges) to measure precision and recall when the prompt or model changes.</li>
@@ -405,7 +544,7 @@ response = client.messages.parse(model="<span data-meta="model"></span>", max_to
       </section>
 
       <section id="run" style="border-bottom:0">
-        <h2>12. Reproduce</h2>
+        <h2>10. Reproduce</h2>
         <pre>cd nvdadigitaltwins/pipeline
 uv venv .venv --python 3.12 &amp;&amp; uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python -m playwright install chromium
